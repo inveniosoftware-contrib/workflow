@@ -10,7 +10,7 @@ setup(
     description = 'Simple workflows for Python',
     author = 'Roman Chyla',
     author_email = 'roman.chyla@gmail.com',
-    url = 'http://roman-chyla.net/',
+    url = 'https://github.com/romanchyla/workflow',
     keywords = ['workflows', 'finite state machine', 'task execution'],
     classifiers = [
         'Programming Language :: Python',

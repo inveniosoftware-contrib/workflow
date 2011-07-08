@@ -239,46 +239,64 @@ After the execution of task B, task C, and task D, task E can be executed
 (I will present the threaded version, as the sequential version would be dead simple). 
 
     
-    def synchronize(*args):
-      import Queue, threading
-      def _synchronize(obj, eng):
-        queue = Queue.Queue()
-        #spawn a pool of threads, and pass them queue instance 
-        for i in range(len(args)-1):
-           t = MySpecialThread(queue)
-           t.setDaemon(True)
-           t.start()
-        
-        for func in args[0:-1]:       
-           queue.put(lambda: func(obj, eng))
-               
-        #wait on the queue until everything has been processed     
-        queue.join()
-        #run the last func
-        args[-1](obj, eng)
-      return _synchronize    
+    def SYNCHRONIZE(*args, **kwargs):
+        """
+        After the execution of task B, task C, and task D, task E can be executed.
+        @var *args: args can be a mix of callables and list of callables
+                    the simplest situation comes when you pass a list of callables
+                    they will be simply executed in parallel.
+                       But if you pass a list of callables (branch of callables)
+                    which is potentionally a new workflow, we will first create a
+                    workflow engine with the workflows, and execute the branch in it
+        @attention: you should never jump out of the synchronized branches
+        """
+        timeout = MAX_TIMEOUT
+        if 'timeout' in kwargs:
+            timeout = kwargs['timeout']
+    
+        if len(args) < 2:
+            raise Exception('You must pass at least two callables')
+    
+        def _synchronize(obj, eng):
+            queue = MyTimeoutQueue()
+            #spawn a pool of threads, and pass them queue instance
+            for i in range(len(args)-1):
+                t = MySpecialThread(queue)
+                t.setDaemon(True)
+                t.start()
+    
+            for func in args[0:-1]:
+                if isinstance(func, list) or isinstance(func, tuple):
+                    new_eng = duplicate_engine_instance(eng)
+                    new_eng.setWorkflow(func)
+                    queue.put(lambda: new_eng.process([obj]))
+                else:
+                    queue.put(lambda: func(obj, eng))
+    
+            #wait on the queue until everything has been processed
+            queue.join_with_timeout(timeout)
+    
+            #run the last func
+            args[-1](obj, eng)
+        _synchronize.__name__ = 'SYNCHRONIZE'
+        return _synchronize   
 
 
-Configuration (ie. what would admins see):
-
-    {{{#!python
+Configuration (ie. what would admins write):
+    
+    from workflow.patterns import SYNCHRONIZE
+    from my_module_x import task_a,task_b,task_c,task_d
+    
     [
-     synchronize(task_b,task_c,task_d, task_e)
+     synchronize(task_b,task_c,task_d, task_a)
     ]
 
 
+TODO:
+=====
 
-== GUI ==
+There already exist a web-based GUI for construction of the workflow, publish it!
 
-GUI will be a web-based interface for constructing different workflows, ideally:
+Fix the bin/run-workflow.py script for executing the workflows.
 
- 1. it will be simple, dynamic, ajaxian
- 2. enforce basic checking (what tasks is possible to combine with what other task)
-
-I don't like very much the workflow based engines - they seem too much complicated
-
- 1. Yahoo pipes
- 2. Open source implementation of YP - http://javascript.neyric.com/wireit/
- 3. pipes.deri.org
- 4. http://www.draw2d.org/draw2d/
-
+Explain how the workflows can be saved and organized, embedded.
