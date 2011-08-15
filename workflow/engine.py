@@ -1,6 +1,6 @@
 
 #######################################################################################
-## Copyright (c) 2010, Roman Chyla, http://www.roman-chyla.net                       ##
+## Copyright (c) 2010-2011 CERN                                                      ##
 ## All rights reserved.                                                              ##
 ##                                                                                   ##
 ## Redistribution and use in source and binary forms, with or without modification,  ##
@@ -26,17 +26,17 @@
 ## OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED ##
 ## OF THE POSSIBILITY OF SUCH DAMAGE.                                                ##
 ##                                                                                   ##
-## Contributors:                                                                     ##
-##    Raja Sripada <rsripada@cern.ch>                                                ##
-##        - improvements for the WFE serialization                                   ##
 #######################################################################################
 
 import logging # we are not using the newseman logging to make this library independent
 import new
 import copy
 import pickle
+import sys
 
 DEBUG = False
+LOGGING_LEVEL = logging.INFO
+LOG = None
 
 class WorkflowTransition(Exception): pass # base class for WFE
 class WorkflowError(Exception): pass # general error
@@ -57,48 +57,48 @@ class WorkflowMissingKey(WorkflowError): pass # when trying to use unregistered 
 class GenericWorkflowEngine(object):
     """Wofklow engine is a Finite State Machine with memory
     It is used to execute set of methods in a specified order.
-    
+
     example:
-    
+
         from merkur.workflows.parts import load_annie, load_seman
         from newseman.general.workflow import patterns as p
-    
+
         workflow = [
                 load_seman_components.workflow,
                 p.IF(p.OBJ_GET(['path', 'text'], cond='any'),
-                     [ p.TRY(g.get_annotations(), retry=1, 
-                                onfailure=p.ERROR('Error in the annotation workflow'), 
+                     [ p.TRY(g.get_annotations(), retry=1,
+                                onfailure=p.ERROR('Error in the annotation workflow'),
                                 verbose=True),
                        p.IF(p.OBJ_GET('xml'),
                              translate_document.workflow)
                     ])
                 ]
-                
+
         This workflow is then used as:
             wfe = GenericWorkflowEngine()
             wfe.setWorkflow(workflow)
             wfe.process([{foo:bar}, {foo:...}])
-            
+
     This workflow engine instance can be freezed and restarted, it remembers
     its internal state and will pick up processing after the last finished
-    task. 
-        
+    task.
+
         import pickle
         s = pickle.dumps(wfe)
-    
+
     However, when restarting the workflow, you must initialize the workflow
     tasks manually using their original definition
-    
+
         wfe = pickle.loads(s)
         wfe.setWorkflow(workflow)
-    
+
     It is also not possible to serialize WFE when custom factory
     tasks were provided. If you attempt to serialize such a WFE instance,
     it will raise exception. If you want to serialize
     WFE including its factory hooks and workflow callbacks, use the
     PhoenixWorkflowEngine class instead.
-        
-    
+
+
     """
 
     def __init__(self,
@@ -106,7 +106,7 @@ class GenericWorkflowEngine(object):
                  callback_chooser=None,
                  before_processing=None,
                  after_processing=None):
-        
+
         self._picklable_safe = True
         for name, x in [('processing_factory', processing_factory),
                         ('callback_chooser', callback_chooser),
@@ -131,7 +131,7 @@ class GenericWorkflowEngine(object):
             raise pickle.PickleError("The instance of the workflow engine cannot be serialized, "
             "because it was constructed with custom, user-supplied callbacks. Either use"
             "PickableWorkflowEngine or provide your own __getstate__ method.")
-        return {'_store':self._store, '_objects': self._objects, 
+        return {'_store':self._store, '_objects': self._objects,
                 '_i': self._i, '_callbacks': {}, 'log': self.log}
 
 
@@ -144,8 +144,8 @@ class GenericWorkflowEngine(object):
         if len(self._objects) < self._i[0]:
             raise pickle.PickleError("The workflow instance inconsistent state, too few objects")
         self._unpickled = True
-        
-    
+
+
     def setLogger(self, logger):
         """The logger instance must be pickable if the serialization should work"""
         self.log = logger
@@ -255,17 +255,17 @@ class GenericWorkflowEngine(object):
     @staticmethod
     def processing_factory(objects, self):
         """Default processing factory, will process objects in order
-        
+
         @var objects: list of objects (passed in by self.process())
         @keyword cls: engine object itself, because this method may
             be implemented by the standalone function, we pass the
             self also as a cls argument
-            
+
         As the WFE proceeds, it increments the internal counter, the
         first position is the number of the element. This pointer increases
-        before the object is taken 
-        
-        2nd pos is reserved for the array that points to the task position. 
+        before the object is taken
+
+        2nd pos is reserved for the array that points to the task position.
         The number there points to the task that is currently executed;
         when error happens, it will be there unchanged. The pointer is
         updated after the task finished running.
@@ -274,7 +274,7 @@ class GenericWorkflowEngine(object):
         self.before_processing(objects, self)
 
         i = self._i
-        
+
         while i[0] < len(objects)-1 and i[0] >= -1: # negative index not allowed, -1 is special
             i[0] += 1
             obj = objects[i[0]]
@@ -409,7 +409,7 @@ class GenericWorkflowEngine(object):
             return self._callbacks
 
     def addCallback(self, key, func, before=None, after=None, relative_weight=None):
-        '''Inserts one callable to the stack of the callables''' 
+        '''Inserts one callable to the stack of the callables'''
         try:
             if func: #can be None
                 self.getCallbacks(key).append(func)
@@ -502,7 +502,7 @@ class GenericWorkflowEngine(object):
     def getCurrObjId(self):
         """Returns id of the currently processed object"""
         return self._i[0]
-    
+
     def getCurrTaskId(self):
         """Returns id of the currently processed task. Note that the return value of this method is not thread-safe."""
         return self._i[1]
@@ -513,12 +513,12 @@ class GenericWorkflowEngine(object):
         for obj in self._objects:
             yield (i, obj)
             i += 1
-            
+
     def restart(self, obj, task, objects=None):
         """Restart the workflow engine after it was deserialized
-        
+
         """
-        
+
         if self._unpickled is not True:
             raise Exception("You can call this method only after loading serialized engine")
         if len(self.getCallbacks(key=None)) == 0:
@@ -530,10 +530,10 @@ class GenericWorkflowEngine(object):
         elif obj == 'current': # continue with the current object
             self._i[0] -= 1
         elif obj == 'next':
-            pass 
+            pass
         else:
             raise Exception('Unknown start point for object: %s' % obj)
-        
+
         # set the task that will be executed first
         if task == 'prev': # the previous
             self._i[1][-1] -= 1
@@ -543,30 +543,30 @@ class GenericWorkflowEngine(object):
             self._i[1][-1] += 1
         else:
             raise Exception('Unknown start pointfor task: %s' % obj)
-        
+
         if objects:
             self.process(objects)
         else:
             self.process(self._objects)
-        
+
         self._unpickled = False
 
 
 class PhoenixWorkflowEngine(GenericWorkflowEngine):
     """Implementation of the GenericWorkflowEngine which is able to be
     *serialized* and re-executed also with its workflow tasks - without knowing
-    their original definition. This implementation depends on the 
+    their original definition. This implementation depends on the
     picloud module - http://www.picloud.com/. The module must be
     installed in the standard location.
-    
+
     """
-    
+
     def __init__(self, *args, **kwargs):
         super(PhoenixWorkflowEngine, self).__init__(*args, **kwargs)
         from cloud import serialization
         self._picloud_serializer = serialization
 
-    
+
     def __getstate__(self):
         out = super(PhoenixWorkflowEngine, self).__getstate__()
         cbs = self.getCallbacks(key=None)
@@ -578,11 +578,11 @@ class PhoenixWorkflowEngine(GenericWorkflowEngine):
                 factory_calls[name] = c
         out['factory_calls'] = self._picloud_serializer.serialize(factory_calls, needsPyCloudSerializer=True)
         return out
-    
+
     def __setstate__(self, state):
         from cloud import serialization
         self._picloud_serializer = serialization
-        
+
         state['_callbacks'] = self._picloud_serializer.deserialize(state['_callbacks'])
         super(PhoenixWorkflowEngine, self).__setstate__(state)
         factory_calls = self._picloud_serializer.deserialize(state['factory_calls'])
@@ -611,3 +611,52 @@ def duplicate_engine_instance(eng):
                       before_processing=eng.before_processing,
                       after_processing=eng.after_processing)
     return new_eng
+
+
+def get_logger(name):
+    """Creates a logger for you - with the parent logger and
+    common configuration"""
+    if name[0:8] != 'workflow' and len(name) > 8:
+        sys.stderr.write("Warning: you are creating a logger without 'workflow' as a root (%s),"
+        "this means that it will not share workflow settings and cannot be administered from one place" % name)
+    if LOG:
+        logger = LOG.manager.getLogger(name)
+    else:
+        logger = logging.getLogger(name)
+        hdlr = logging.StreamHandler(sys.stderr)
+        formatter = logging.Formatter('%(levelname)s %(asctime)s %(name)s:%(lineno)d    %(message)s')
+        hdlr.setFormatter(formatter)
+        logger.addHandler(hdlr)
+        logger.setLevel(LOGGING_LEVEL)
+        logger.propagate = 0
+    if logger not in _loggers:
+        _loggers.append(logger)
+    return logger
+
+def reset_all_loggers(level):
+    """Set logging level for every active logger - beware, if the global
+    manager level is higher, then still nothing will be see. Manager
+    level has precedence - use set_global_level
+    """
+    for l in _loggers:
+        l.setLevel(LOGGING_LEVEL)
+
+def set_global_level(level):
+    """Sets the global level to the manager, the parent manager of all
+    the newseman loggers. With this one call, you can switch off all
+    loggers at once. But you can't enable them using this call, because
+    every logger may have a specific log level
+    """
+    global LOGGING_LEVEL
+    LOGGING_LEVEL = int(level)
+    LOG.manager.disable = LOGGING_LEVEL - 1
+
+
+_loggers = []
+LOG = get_logger('workflow')
+set_global_level(LOGGING_LEVEL)
+
+
+
+
+

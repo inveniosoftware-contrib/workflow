@@ -9,9 +9,9 @@ p = os.path.abspath(os.path.dirname(__file__) + '/../')
 if p not in sys.path:
     sys.path.append(p)
 
-from engine import GenericWorkflowEngine
-import patterns.controlflow as cf
-import patterns.utils as ut
+from workflow.engine import GenericWorkflowEngine
+import workflow.patterns.controlflow as cf
+import workflow.patterns.utils as ut
 
 def i(key):
     def _i(obj, eng):
@@ -182,7 +182,7 @@ class TestGenericWorkflowEngine(unittest.TestCase):
     def test_PARALLEL_SPLIT02(self):
         """TODO: this test is failing, but that is because sometimes it does
         not take into accounts threads being executed in random mannger"""
-        
+
         we = GenericWorkflowEngine()
         doc = self.getDoc()[0:1]
 

@@ -1,6 +1,6 @@
 
 #######################################################################################
-## Copyright (c) 2010, Roman Chyla, http://www.roman-chyla.net                       ##
+## Copyright (c) 2010-2011, CERN                                                     ##
 ## All rights reserved.                                                              ##
 ##                                                                                   ##
 ## Redistribution and use in source and binary forms, with or without modification,  ##
@@ -37,9 +37,8 @@ import copy
 MAX_TIMEOUT = 30000
 
 
-# HACK, should not be up-depenedent
-from newseman.general.workflow.engine import GenericWorkflowEngine as engine
-from newseman.general.workflow.engine import duplicate_engine_instance
+from workflow.engine import GenericWorkflowEngine as engine
+from workflow.engine import duplicate_engine_instance
 
 # ----------------------- helper calls -------------------------------- #
 

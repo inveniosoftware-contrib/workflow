@@ -7,7 +7,7 @@ p = os.path.abspath(os.path.dirname(__file__) + '/../')
 if p not in sys.path:
     sys.path.append(p)
 
-from engine import GenericWorkflowEngine
+from workflow.engine import GenericWorkflowEngine
 
 
 def m(key):

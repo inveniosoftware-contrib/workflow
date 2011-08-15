@@ -7,7 +7,7 @@ p = os.path.abspath(os.path.dirname(__file__) + '/../')
 if p not in sys.path:
     sys.path.append(p)
 
-from engine import GenericWorkflowEngine, HaltProcessing
+from workflow.engine import GenericWorkflowEngine, HaltProcessing
 
 wfe_impl = GenericWorkflowEngine
 
@@ -66,8 +66,8 @@ class FakeToken(object):
             self.data = unicode(data)
         else:
             self.data = data
-        self.pos = None #tohle nastavi TokenCollection pri vystupu objektu
-        self.backreference = None #tady bude odkaz na TokenCollection (pri vystupu)
+        self.pos = None #set TokenCollection on obj return
+        self.backreference = None #here link to TokenCollection (when returning)
         self.__prev = 0
         self.__next = 0
         self.__attributes = {}
@@ -76,9 +76,9 @@ class FakeToken(object):
 
     def __str__(self):
         if isinstance(self.data, unicode):
-            return self.data # tady byl jednoduchy return
+            return self.data
         else:
-            return str(self.data) #tady byl unicode(self.data)
+            return str(self.data)
     def __repr__(self):
         return 'Token(%s, **%s)' % (repr(self.data), repr(self.__attributes))
     def __eq__(self, y):
@@ -518,16 +518,16 @@ class TestWorkflowEngine(unittest.TestCase):
         else:
             raise Exception("jumpTokenBack allowed positive number")
 
-    
+
     # ----------------- HaltProcessing --------------------
-    
+
 
     def test_workflow_30(self):
-        
+
         doc = self.doc
         other_wfe = wfe_impl()
         wfe = self.we
-        
+
         other_wfe.addManyCallbacks(self.key, [
                     m('mouse'),
                         [ m('dog'),
@@ -538,7 +538,7 @@ class TestWorkflowEngine(unittest.TestCase):
                         m('horse'),
                         ]
                     ])
-        
+
         wfe.addManyCallbacks(self.key, [
                     m('mouse'),
                         [ m('dog'),
@@ -555,15 +555,15 @@ class TestWorkflowEngine(unittest.TestCase):
             pass
         except:
             raise
-        
-        
+
+
         t = get_first(doc)
         assert get_xth(doc, 0) == 'mouse dog cat puppy python mouse dog cat puppy python'
         assert get_xth(doc, 1) == None
         assert get_xth(doc, 2) == None
-        print wfe._i
-        print other_wfe._i
-        
+        #print wfe._i
+        #print other_wfe._i
+
         assert str(doc[0]) == 'one'
         assert str(doc[1]) == 'two'
         assert str(doc[2]) == 'three'
@@ -572,11 +572,11 @@ class TestWorkflowEngine(unittest.TestCase):
 
     def test_workflow_31(self):
         '''Restart workflow'''
-        
+
         doc = self.doc
         wfe = self.we
-        
-        
+
+
         wfe.addManyCallbacks(self.key, [
                     m('mouse'),
                         [ m('dog'),
@@ -593,19 +593,19 @@ class TestWorkflowEngine(unittest.TestCase):
             pass
         except:
             raise
-        
-        
+
+
         assert get_xth(doc, 0) == 'mouse dog cat puppy python'
         assert get_xth(doc, 1) == None
         assert get_xth(doc, 2) == None
-        
+
         assert str(doc[0]) == 'one'
         assert str(doc[1]) == 'two'
         assert str(doc[2]) == 'three'
         assert str(doc[3]) == 'four'
         assert str(doc[4]) == 'five'
-        
-        print wfe._i
+
+        #print wfe._i
         wfe._i[0] -= 1
         wfe._i[1][-1] += 1
         # this should pick up from the point where we stopped
@@ -615,11 +615,11 @@ class TestWorkflowEngine(unittest.TestCase):
             pass
         except:
             raise
-        
+
         assert get_xth(doc, 0) == 'mouse dog cat puppy python horse'
         assert get_xth(doc, 1) == 'mouse dog cat puppy python'
         assert get_xth(doc, 2) == None
-        
+
         assert str(doc[0]) == 'one'
         assert str(doc[1]) == 'two'
         assert str(doc[2]) == 'three'

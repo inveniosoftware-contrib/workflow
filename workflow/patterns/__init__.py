@@ -15,7 +15,7 @@ from controlflow import PARALLEL_SPLIT, SYNCHRONIZE, SIMPLE_MERGE, CHOICE
 from utils import EMPTY_CALL, \
                     ENG_GET, ENG_SET, \
                     OBJ_SET, OBJ_GET, \
-                    ERROR, TRY
+                    ERROR, TRY, RUN_WF, \
+                    CALLFUNC, DEBUG_CYCLE, \
+                    PROFILE
 
-# useful functions
-from utils import RUN_WF
