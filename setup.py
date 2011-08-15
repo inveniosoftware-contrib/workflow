@@ -1,5 +1,8 @@
 
-from distutils.core import setup
+try:
+    from setuptools import setup
+except:
+    from distutils.core import setup
 
 
 setup(
@@ -7,8 +10,9 @@ setup(
     packages = ['workflow', 'workflow.tests', 'workflow.patterns'],
     scripts=['bin/run_workflow.py'],
     version = '1.0',
-    description = 'Simple workflows for Python',
     copyright = 'CERN',
+    description = 'Simple workflows for Python',
+    author = 'Roman Chyla',
     url = 'https://github.com/romanchyla/workflow',
     keywords = ['workflows', 'finite state machine', 'task execution'],
     classifiers = [

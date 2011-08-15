@@ -239,7 +239,7 @@ class TalkativeWorkflowEngine(main_engine.GenericWorkflowEngine):
     counter = 0
     def __init__(self, *args, **kwargs):
         main_engine.GenericWorkflowEngine.__init__(self, *args, **kwargs)
-        self.log = merkur.get_logger('TalkativeWFE<%d>' % TalkativeWorkflowEngine.counter)
+        self.log = main_engine.get_logger('TalkativeWFE<%d>' % TalkativeWorkflowEngine.counter)
         TalkativeWorkflowEngine.counter += 1
 
     def execute_callback(self, callback, obj):
