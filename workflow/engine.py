@@ -658,5 +658,5 @@ set_global_level(LOGGING_LEVEL)
 
 
 
-
+__version__ = '1.1.0'
 
