@@ -9,7 +9,7 @@ setup(
     name = 'workflow',
     packages = ['workflow', 'workflow.tests', 'workflow.patterns'],
     scripts=['bin/run_workflow.py'],
-    version = '1.0',
+    version = '1.01',
     copyright = 'CERN',
     description = 'Simple workflows for Python',
     author = 'Roman Chyla',
