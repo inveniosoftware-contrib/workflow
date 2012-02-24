@@ -537,9 +537,9 @@ class GenericWorkflowEngine(object):
         # set the task that will be executed first
         if task == 'prev': # the previous
             self._i[1][-1] -= 1
-        elif obj == 'current': # restart the task again
+        elif task == 'current': # restart the task again
             self._i[1][-1] -= 0
-        elif obj == 'next': # continue with the next task
+        elif task == 'next': # continue with the next task
             self._i[1][-1] += 1
         else:
             raise Exception('Unknown start pointfor task: %s' % obj)
