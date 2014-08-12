@@ -1,10 +1,12 @@
 *.pyc
 *~
-#*
 *.egg-info
-.*
+*.egg
 MANIFEST
 build
 dist
 build/*
 dist/*
+.ropeproject
+.coverage
+coverage.xml

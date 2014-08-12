@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 import unittest
 import sys
 import os
@@ -9,16 +9,14 @@ if p not in sys.path:
 
 from workflow.engine import GenericWorkflowEngine, PhoenixWorkflowEngine
 
-import unittest_engine_interface
-import unittest_engine_workflow
-import unittest_patterns
+import test_engine_interface
+import test_engine_workflow
+import test_patterns
 
 
 import copy
 import threading
 import pickle
-
-from cloud import serialization
 
 class TestPhoenixWorkflowEngine(PhoenixWorkflowEngine):
 
@@ -67,15 +65,15 @@ class TestPhoenixWorkflowEngine(PhoenixWorkflowEngine):
 
 
 def suite():
-    unittest_engine_interface.GenericWorkflowEngine = PhoenixWorkflowEngine
-    unittest_engine_workflow.GenericWorkflowEngine = PhoenixWorkflowEngine
-    unittest_patterns.GenericWorkflowEngine = PhoenixWorkflowEngine
+    test_engine_interface.GenericWorkflowEngine = PhoenixWorkflowEngine
+    test_engine_workflow.GenericWorkflowEngine = PhoenixWorkflowEngine
+    test_patterns.GenericWorkflowEngine = PhoenixWorkflowEngine
 
     suite = unittest.TestSuite()
     #suite.addTest(WorkflowEngine('test_workflow'))
-    suite.addTest(unittest.makeSuite(unittest_engine_interface.TestGenericWorkflowEngine))
-    suite.addTest(unittest.makeSuite(unittest_engine_workflow.TestWorkflowEngine))
-    suite.addTest(unittest.makeSuite(unittest_patterns.TestGenericWorkflowEngine))
+    suite.addTest(unittest.makeSuite(test_engine_interface.TestGenericWorkflowEngine))
+    suite.addTest(unittest.makeSuite(test_engine_workflow.TestWorkflowEngine))
+    suite.addTest(unittest.makeSuite(test_patterns.TestGenericWorkflowEngine))
     return suite
 
 if __name__ == '__main__':

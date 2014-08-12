@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 import unittest
 import sys
 import os
@@ -15,13 +15,15 @@ class TestConfig(unittest.TestCase):
         pass
 
     def test_basics(self):
-        config_reader.init('local.ini')
+        config_reader.init(os.path.join(os.path.dirname(__file__),
+                                        'local.ini'))
         self.assertEqual(config_reader.STRING, 'string')
         self.assertEqual(config_reader.ARRAY, ['one', 'two', 'three'])
         self.assertEqual(config_reader.OVERRIDEN, 'local')
         self.assertEqual(config_reader.string, 'global/local')
 
-        config_reader.init('local2.ini')
+        config_reader.init(os.path.join(os.path.dirname(__file__),
+                                        'local2.ini'))
         self.assertEqual(config_reader.STRING, 'string')
         self.assertEqual(config_reader.ARRAY, ['one', 'two', 'three'])
         self.assertEqual(config_reader.OVERRIDEN, 'global')

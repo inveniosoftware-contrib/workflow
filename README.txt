@@ -291,6 +291,20 @@ Configuration (ie. what would admins write):
      synchronize(task_b,task_c,task_d, task_a)
     ]
 
+Testing
+=======
+
+Running the test suite is as simple as:
+
+.. code-block:: console
+
+   $ python setup.py test
+
+or, to also show code coverage:
+
+.. code-block:: console
+
+   $ ./run-tests.sh
 
 TODO:
 =====

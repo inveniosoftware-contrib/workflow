@@ -7,7 +7,7 @@ except:
 
 setup(
     name = 'workflow',
-    packages = ['workflow', 'workflow.tests', 'workflow.patterns'],
+    packages = ['workflow', 'workflow.patterns'],
     scripts=['bin/run_workflow.py'],
     version = '1.1.0',
     copyright = 'CERN',
@@ -29,6 +29,8 @@ setup(
         'Topic :: Text Processing :: Linguistic',
         'Topic :: Utilities',
         ],
+    test_suite='nose.collector',
+    tests_require=['nose', 'cloud', 'coverage'],
     install_requires = ['configobj>4.7.0'],
     long_description = """\
 Simple worfklows for Python
