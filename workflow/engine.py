@@ -1,6 +1,6 @@
 
 #######################################################################################
-## Copyright (c) 2010-2011 CERN                                                      ##
+## Copyright (c) 2010-2011, 2014 CERN                                                ##
 ## All rights reserved.                                                              ##
 ##                                                                                   ##
 ## Redistribution and use in source and binary forms, with or without modification,  ##
@@ -658,5 +658,4 @@ set_global_level(LOGGING_LEVEL)
 
 
 
-__version__ = '1.1.0'
-
+__version__ = '1.2.0.dev20140812'
