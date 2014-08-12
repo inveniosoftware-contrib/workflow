@@ -1,7 +1,15 @@
-=================
- Simple Workflow
-=================
+==========
+ workflow
+==========
 
+.. image:: https://travis-ci.org/inveniosoftware/workflow.png?branch=master
+    :target: https://travis-ci.org/inveniosoftware/workflow
+.. image:: https://coveralls.io/repos/inveniosoftware/workflow/badge.png?branch=master
+    :target: https://coveralls.io/r/inveniosoftware/workflow
+.. image:: https://pypip.in/v/workflow/badge.png
+   :target: https://pypi.python.org/pypi/workflow/
+.. image:: https://pypip.in/d/workflow/badge.png
+   :target: https://pypi.python.org/pypi/workflow/
 
 Introduction
 ============
