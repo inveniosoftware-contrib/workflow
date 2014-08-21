@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of Workflow.
+# Copyright (C) 2011, 2014 CERN.
+#
+# Workflow is free software; you can redistribute it and/or modify it
+# under the terms of the Revised BSD License; see COPYING.txt file for
+# more details.
 
 try:
     from setuptools import setup
@@ -42,7 +50,7 @@ setup(
     tests_require=['nose', 'cloud', 'coverage'],
     install_requires = ['configobj>4.7.0'],
     long_description = """\
-Simple worfklows for Python
+Simple workflows for Python
 -------------------------------------
 
 Wofklow engine is a Finite State Machine with memory
