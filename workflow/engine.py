@@ -34,6 +34,8 @@ import copy
 import pickle
 import sys
 
+from .version import __version__
+
 DEBUG = False
 LOGGING_LEVEL = logging.INFO
 LOG = None
@@ -655,7 +657,3 @@ def set_global_level(level):
 _loggers = []
 LOG = get_logger('workflow')
 set_global_level(LOGGING_LEVEL)
-
-
-
-__version__ = '1.2.0.dev20140812'

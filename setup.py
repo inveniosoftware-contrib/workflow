@@ -4,12 +4,21 @@ try:
 except:
     from distutils.core import setup
 
+import os
+import re
+
+# Get the version string.  Cannot be done with import!
+with open(os.path.join('workflow', 'version.py'), 'rt') as f:
+    version = re.search(
+        '__version__\s*=\s*"(?P<version>.*)"\n',
+        f.read()
+    ).group('version')
 
 setup(
     name = 'workflow',
     packages = ['workflow', 'workflow.patterns'],
     scripts=['bin/run_workflow.py'],
-    version = '1.2.0.dev20140812',
+    version=version,
     copyright = 'CERN',
     description = 'Simple workflows for Python',
     author = 'Roman Chyla',
