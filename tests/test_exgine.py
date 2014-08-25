@@ -26,19 +26,19 @@ import copy
 import threading
 import pickle
 
+
 class TestPhoenixWorkflowEngine(PhoenixWorkflowEngine):
 
     @staticmethod
     def before_processing(objects, self):
-        """Standard pre-processing callback - saves a pointer to the processed objects"""
-        #self.reset()
+        """Saves a pointer to the processed objects."""
+        # self.reset()
         self._objects = objects
         self._original_objs = copy.deepcopy(objects)
 
-
     @staticmethod
     def after_processing(objects, self):
-        """Standard post-processing callback, basic cleaning"""
+        """Standard post-processing callback, basic cleaning."""
         self._objects = []
         self._i = [0]
 
@@ -50,11 +50,11 @@ class TestPhoenixWorkflowEngine(PhoenixWorkflowEngine):
         # get a deepcopy of the original objects
         orig_objs = self._original_objs
 
-        #create a new wfe (but make sure we don't call serialization again)
+        # create a new wfe (but make sure we don't call serialization again)
         wfe2 = pickle.dumps(self)
         assert isinstance(wfe2, basestring)
         wfe2 = pickle.loads(wfe2)
-        wfe2.after_processing = lambda objs,eng: []
+        wfe2.after_processing = lambda objs, eng: []
 
         # test if the results are identical
         wfe2.process(orig_objs)
@@ -70,20 +70,19 @@ class TestPhoenixWorkflowEngine(PhoenixWorkflowEngine):
             print 're-executed res:', orig_objs
 
 
-
-
 def suite():
     test_engine_interface.GenericWorkflowEngine = PhoenixWorkflowEngine
     test_engine_workflow.GenericWorkflowEngine = PhoenixWorkflowEngine
     test_patterns.GenericWorkflowEngine = PhoenixWorkflowEngine
 
     suite = unittest.TestSuite()
-    #suite.addTest(WorkflowEngine('test_workflow'))
-    suite.addTest(unittest.makeSuite(test_engine_interface.TestGenericWorkflowEngine))
+    # suite.addTest(WorkflowEngine('test_workflow'))
+    suite.addTest(
+        unittest.makeSuite(test_engine_interface.TestGenericWorkflowEngine))
     suite.addTest(unittest.makeSuite(test_engine_workflow.TestWorkflowEngine))
     suite.addTest(unittest.makeSuite(test_patterns.TestGenericWorkflowEngine))
     return suite
 
 if __name__ == '__main__':
-    #unittest.main()
+    # unittest.main()
     unittest.TextTestRunner(verbosity=2).run(suite())

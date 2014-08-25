@@ -23,38 +23,41 @@ from workflow.engine import duplicate_engine_instance
 # ----------------------- helper calls -------------------------------- #
 
 
-
 def TASK_JUMP_BWD(step=-1):
-    """Jumps to the previous task - eng.jumpCallBack
-    example: A, B, TASK_JUMP_FWD(-2), C, D, ...
+    """Jump to the previous task - eng.jumpCallBack.
+
+    Example: A, B, TASK_JUMP_FWD(-2), C, D, ...
     will produce: A, B, A, B, A, B, ... (recursion!)
-    @var step: int, must not be positive number
+    :param step: int, must not be positive number
     """
     def _move_back(obj, eng):
         eng.jumpCallBack(step)
     _move_back.__name__ = 'TASK_JUMP_BWD'
     return _move_back
 
+
 def TASK_JUMP_FWD(step=1):
-    """Jumps to the next task - eng.jumpCallForward()
+    """Jump to the next task - eng.jumpCallForward()
     example: A, B, TASK_JUMP_FWD(2), C, D, ...
     will produce: A, B, D
-    @var step: int
+    :param step: int
     """
     def _x(obj, eng):
         eng.jumpCallForward(step)
     _x.__name__ = 'TASK_JUMP_FWD'
     return _x
 
+
 def TASK_JUMP_IF(cond, step):
-    """Jumps in the specified direction if the condition
+    """Jump in the specified direction if the condition
     evaluates to True, the difference from other IF conditions
     is that this one does not insert the code inside a [] block
-    @var cond: function
-    @var step: int, negative jumps back, positive forward
+    :param cond: function
+    :param step: int, negative jumps back, positive forward
     """
     def minus(obj, eng):
         return cond(obj, eng) and eng.jumpCallBack(step)
+
     def plus(obj, eng):
         return cond(obj, eng) and eng.jumpCallForward(step)
     if int(step) < 0:
@@ -62,34 +65,39 @@ def TASK_JUMP_IF(cond, step):
     else:
         return plus
 
+
 def BREAK():
-    """Stops execution of the current block, but keeps running
-    in the workflow - eng.breakFromThisLoop()
+    """Stop execution of the current block while keeping workflow running.
+
+    Usage: ``eng.breakFromThisLoop()``.
     """
     def x(obj, eng):
         eng.breakFromThisLoop()
     x.__name__ = 'BREAK'
     return x
 
+
 def STOP():
-    """Unconditional stop of the workflow execution"""
+    """Unconditional stop of the workflow execution."""
     def x(obj, eng):
         eng.stopProcessing()
     x.__name__ = 'STOP'
     return x
 
+
 def OBJ_NEXT():
-    """Stops the workflow execution for the current object and start
-    the same worfklow for the next object - eng.continueNextToken()"""
+    """Stop the workflow execution for the current object and start
+    the same worfklow for the next object - eng.continueNextToken()."""
     def x(obj, eng):
         eng.continueNextToken()
     x.__name__ = 'OBJ_NEXT'
     return x
 
+
 def OBJ_JUMP_FWD(step=1):
-    """Stops the workflow execution, jumps to xth consecutive object
+    """Stop the workflow execution, jumps to xth consecutive object
     and starts executing the workflow on it - eng.jumpTokenForward()
-    @var step: int, relative jump from the current obj, must not be
+    :param step: int, relative jump from the current obj, must not be
         negative number
     """
     def x(obj, eng):
@@ -97,10 +105,11 @@ def OBJ_JUMP_FWD(step=1):
     x.__name__ = 'OBJ_JUMP_FWD'
     return x
 
+
 def OBJ_JUMP_BWD(step=-1):
-    """Stops the workflow execution, jumps to xth antecedent object
+    """Stop the workflow execution, jumps to xth antecedent object
     and starts executing the workflow on it - eng.jumpTokenForward()
-    @var step: int, relative jump from the current obj, must not be
+    :param step: int, relative jump from the current obj, must not be
         negative number
     """
     def _x(obj, eng):
@@ -108,29 +117,32 @@ def OBJ_JUMP_BWD(step=-1):
     _x.__name__ = 'OBJ_JUMP_BWD'
     return _x
 
-# -------------------------- some conditions -------------------------------------- #
+# ------------------------- some conditions --------------------------------- #
+
 
 def IF(cond, branch):
-    """Implements condition, if cond evaluates to True
-    branch is executed
-    @var cond: callable, function that decides
-    @var branch: block of functions to run
+    """Implement condition, if cond evaluates to True branch is executed.
 
-    @attention: the branch is inserted inside [] block, therefore jumping is limited
-                only inside the branch
+    :param cond: callable, function that decides
+    :param branch: block of functions to run
+
+    @attention: the branch is inserted inside [] block, therefore jumping is
+                limited only inside the branch
     """
-    x = lambda obj, eng: cond(obj,eng) and eng.jumpCallForward(1) or eng.breakFromThisLoop()
+    x = lambda obj, eng: cond(obj, eng) and eng.jumpCallForward(
+        1) or eng.breakFromThisLoop()
     x.__name__ = 'IF'
     return [x, branch]
+
 
 def IF_NOT(cond, branch):
     """Implements condition, if cond evaluates to False
     branch is executed
-    @var cond: callable, function that decides
-    @var branch: block of functions to run
+    :param cond: callable, function that decides
+    :param branch: block of functions to run
 
-    @attention: the branch is inserted inside [] block, therefore jumping is limited
-                only inside the branch
+    @attention: the branch is inserted inside [] block, therefore jumping is
+                limited only inside the branch
     """
     def x(obj, eng):
         if cond(obj, eng):
@@ -139,44 +151,49 @@ def IF_NOT(cond, branch):
     x.__name__ = 'IF_NOT'
     return [x, branch]
 
+
 def IF_ELSE(cond, branch1, branch2):
     """Implements condition, if cond evaluates to True
     branch1 is executed, otherwise branch2
-    @var cond: callable, function that decides
-    @var branch1: block of functions to run [if=true]
-    @var branch2: block of functions to run [else]
+    :param cond: callable, function that decides
+    :param branch1: block of functions to run [if=true]
+    :param branch2: block of functions to run [else]
 
-    @attention: the branch is inserted inside [] block, therefore jumping is limited
-                only inside the branch
+    @attention: the branch is inserted inside [] block, therefore jumping is
+                limited only inside the branch
     """
     if branch1 is None or branch2 is None:
-        raise Exception ("Neither of the branches can be None/empty")
-    x = lambda obj, eng: cond(obj, eng) and eng.jumpCallForward(1) or eng.jumpCallForward(3)
+        raise Exception("Neither of the branches can be None/empty")
+    x = lambda obj, eng: cond(obj, eng) and eng.jumpCallForward(
+        1) or eng.jumpCallForward(3)
     x.__name__ = 'IF_ELSE'
     return [x, branch1, BREAK(), branch2]
 
+
 def WHILE(cond, branch):
     """Keeps executing branch as long as the condition cond is True
-    @var cond: callable, function that decides
-    @var branch: block of functions to run [if=true]
+    :param cond: callable, function that decides
+    :param branch: block of functions to run [if=true]
     """
     # quite often i passed a function, which results in errors
     if callable(branch):
         branch = (branch,)
     # we don't know what is hiding inside branch
     branch = tuple(engine._cleanUpCallables(branch))
+
     def x(obj, eng):
         if not cond(obj, eng):
             eng.breakFromThisLoop()
     x.__name__ = 'WHILE'
-    return [x, branch, TASK_JUMP_BWD(-(len(branch)+1))]
+    return [x, branch, TASK_JUMP_BWD(-(len(branch) + 1))]
 
-# -------------------- basic control flow patterns -------------------------------- #
-# -------- http://www.yawlfoundation.org/resources/patterns.html#basic ------------ #
+# ---------------- basic control flow patterns ------------------------------ #
+# ------ http://www.yawlfoundation.org/resources/patterns.html#basic -------- #
+
 
 def PARALLEL_SPLIT(*args):
-    """
-    Tasks A,B,C,D... are all started in parallel
+    """Start task in parallel.
+
     @attention: tasks A,B,C,D... are not addressable, you can't
         you can't use jumping to them (they are invisible to
         the workflow engine). Though you can jump inside the
@@ -195,26 +212,26 @@ def PARALLEL_SPLIT(*args):
     """
 
     def _parallel_split(obj, eng, calls):
-        lock=thread.allocate_lock()
+        lock = thread.allocate_lock()
         i = 0
         eng.setVar('lock', lock)
         for func in calls:
             new_eng = duplicate_engine_instance(eng)
-            new_eng.setWorkflow([lambda o,e: e.setVar('lock', lock), func])
+            new_eng.setWorkflow([lambda o, e: e.setVar('lock', lock), func])
             thread.start_new_thread(new_eng.process, ([obj], ))
-            #new_eng.process([obj])
+            # new_eng.process([obj])
     return lambda o, e: _parallel_split(o, e, args)
 
 
 def SYNCHRONIZE(*args, **kwargs):
     """
     After the execution of task B, task C, and task D, task E can be executed.
-    @var *args: args can be a mix of callables and list of callables
-                the simplest situation comes when you pass a list of callables
-                they will be simply executed in parallel.
-                   But if you pass a list of callables (branch of callables)
-                which is potentionally a new workflow, we will first create a
-                workflow engine with the workflows, and execute the branch in it
+    :param *args: args can be a mix of callables and list of callables
+        the simplest situation comes when you pass a list of callables
+        they will be simply executed in parallel.
+        But if you pass a list of callables (branch of callables)
+        which is potentionally a new workflow, we will first create a
+        workflow engine with the workflows, and execute the branch in it
     @attention: you should never jump out of the synchronized branches
     """
     timeout = MAX_TIMEOUT
@@ -226,8 +243,8 @@ def SYNCHRONIZE(*args, **kwargs):
 
     def _synchronize(obj, eng):
         queue = MyTimeoutQueue()
-        #spawn a pool of threads, and pass them queue instance
-        for i in range(len(args)-1):
+        # spawn a pool of threads, and pass them queue instance
+        for i in range(len(args) - 1):
             t = MySpecialThread(queue)
             t.setDaemon(True)
             t.start()
@@ -240,25 +257,26 @@ def SYNCHRONIZE(*args, **kwargs):
             else:
                 queue.put(lambda: func(obj, eng))
 
-        #wait on the queue until everything has been processed
+        # wait on the queue until everything has been processed
         queue.join_with_timeout(timeout)
 
-        #run the last func
+        # run the last func
         args[-1](obj, eng)
     _synchronize.__name__ = 'SYNCHRONIZE'
     return _synchronize
+
 
 def CHOICE(arbiter, *predicates, **kwpredicates):
     """
     A choice is made to execute either task B, task C or task D
     after execution of task A.
-    @var arbiter: a function which returns some value (the value
+    :param arbiter: a function which returns some value (the value
         must be inside the predicates dictionary)
-    @var predicates: list of callables, the first item must be the
+    :param predicates: list of callables, the first item must be the
         value returned by the arbiter, example:
         ('submit', task_a),
         ('upload' : task_a, [task_b, task_c]...)
-    @keyword **kwpredicates: you can supply predicates also as a
+    :param **kwpredicates: you can supply predicates also as a
         keywords, example
         CHOICE(arbiter, one=lambda...., two=[lambda o,e:...., ...])
     @postcondition: all tasks are 'jumpable'
@@ -278,7 +296,7 @@ def CHOICE(arbiter, *predicates, **kwpredicates):
 
     def _exclusive_choice(obj, eng):
         val = arbiter(obj, eng)
-        i = mapping[val] # die on error
+        i = mapping[val]  # die on error
         eng.jumpCallForward(i)
     c = _exclusive_choice
     c.__name__ = arbiter.__name__
@@ -299,7 +317,7 @@ def SIMPLE_MERGE(*args):
     final_task = args[-1]
     workflow = []
     mapping = {}
-    total = ((len(args)-1) * 2) + 1
+    total = ((len(args) - 1) * 2) + 1
     for branch in args[0:-1]:
         total -= 2
         workflow.append(branch)
@@ -315,6 +333,7 @@ def SIMPLE_MERGE(*args):
 
 
 class MyTimeoutQueue(Queue.Queue):
+
     def __init__(self, *args):
         Queue.Queue.__init__(self, *args)
 
@@ -331,7 +350,9 @@ class MyTimeoutQueue(Queue.Queue):
         finally:
             self.all_tasks_done.release()
 
+
 class MySpecialThread(threading.Thread):
+
     def __init__(self, itemq, *args, **kwargs):
         threading.Thread.__init__(self, *args, **kwargs)
         self.itemq = itemq

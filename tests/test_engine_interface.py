@@ -23,22 +23,28 @@ def m(key):
         obj.append(key)
     return _m
 
+
 def stop_if_str(value):
     def x(obj, eng):
         if str(obj) == value:
             eng.stopProcessing()
     return lambda obj, eng: x(obj, eng)
 
+
 def asterisk_chooser(obj, eng):
     return eng.getCallbacks('*')
+
 
 def empty_chooser(obj, eng):
     return []
 
+
 def call_forward(step=0):
     return lambda obj, eng: eng.jumpCallForward(step)
 
+
 class TestGenericWorkflowEngine(unittest.TestCase):
+
     """Tests of the WE interface"""
 
     def setUp(self):
@@ -69,29 +75,28 @@ class TestGenericWorkflowEngine(unittest.TestCase):
 
         try:
             we3 = GenericWorkflowEngine(processing_factory='x',
-                     callback_chooser='x',
-                     before_processing='x',
-                     after_processing='x')
+                                        callback_chooser='x',
+                                        before_processing='x',
+                                        after_processing='x')
         except Exception, msg:
             assert 'must be a callable' not in msg
 
         try:
             we3 = GenericWorkflowEngine(callback_chooser=asterisk_chooser,
-                     after_processing='x')
+                                        after_processing='x')
         except Exception, msg:
             assert 'must be a callable' not in msg
 
-
         we1.addManyCallbacks('*', [
-                    m('mouse'),
-                    [ m('dog'), call_forward(1), m('cat'), m('puppy')],
-                    m('horse'),
-                    ])
+            m('mouse'),
+            [m('dog'), call_forward(1), m('cat'), m('puppy')],
+            m('horse'),
+        ])
         we2.addManyCallbacks('*', [
-                    m('mouse'),
-                    [ m('dog'), call_forward(1), m('cat'), m('puppy')],
-                    m('horse'),
-                    ])
+            m('mouse'),
+            [m('dog'), call_forward(1), m('cat'), m('puppy')],
+            m('horse'),
+        ])
 
         we1.process(d1)
         we2.process(d2)
@@ -104,10 +109,10 @@ class TestGenericWorkflowEngine(unittest.TestCase):
 
         we = GenericWorkflowEngine()
         we.addManyCallbacks('*', [
-                    m('mouse'),
-                    [ m('dog'), call_forward(1), m('cat'), m('puppy')],
-                    m('horse'),
-                    ])
+            m('mouse'),
+            [m('dog'), call_forward(1), m('cat'), m('puppy')],
+            m('horse'),
+        ])
 
         # process using defaults
         we.process(d1)
@@ -139,21 +144,21 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         d2 = self.getDoc()
 
         we0.addManyCallbacks('*', [
-                    m('mouse'),
-                    [ m('dog'), call_forward(1), m('cat'), m('puppy')],
-                    m('horse'),
-                    ])
+            m('mouse'),
+            [m('dog'), call_forward(1), m('cat'), m('puppy')],
+            m('horse'),
+        ])
         we1.setWorkflow([
-                    m('mouse'),
-                    [ m('dog'), call_forward(1), m('cat'), m('puppy')],
-                    m('horse'),
-                    ])
+            m('mouse'),
+            [m('dog'), call_forward(1), m('cat'), m('puppy')],
+            m('horse'),
+        ])
         we2.addManyCallbacks('x', [
-                    m('mouse'),
-                    [ m('dog'), call_forward(1), m('cat'), m('puppy')],
-                    m('horse'),
-                    ])
-        we2.configure(callback_chooser=lambda o,e: e.getCallbacks('x'))
+            m('mouse'),
+            [m('dog'), call_forward(1), m('cat'), m('puppy')],
+            m('horse'),
+        ])
+        we2.configure(callback_chooser=lambda o, e: e.getCallbacks('x'))
 
         we0.process(d0)
         we1.process(d1)
@@ -165,10 +170,10 @@ class TestGenericWorkflowEngine(unittest.TestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    #suite.addTest(WorkfloGenericWorkflowEngine('test_workflow'))
+    # suite.addTest(WorkfloGenericWorkflowEngine('test_workflow'))
     suite.addTest(unittest.makeSuite(TestGenericWorkflowEngine))
     return suite
 
 if __name__ == '__main__':
-    #unittest.main()
+    # unittest.main()
     unittest.TextTestRunner(verbosity=2).run(suite())

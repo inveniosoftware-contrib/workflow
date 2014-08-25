@@ -23,15 +23,15 @@ with open(os.path.join('workflow', 'version.py'), 'rt') as f:
     ).group('version')
 
 setup(
-    name = 'workflow',
-    packages = ['workflow', 'workflow.patterns'],
+    name='workflow',
+    packages=['workflow', 'workflow.patterns'],
     scripts=['bin/run_workflow.py'],
     version=version,
-    description = 'Simple workflows for Python',
-    author = 'Roman Chyla',
-    url = 'https://github.com/romanchyla/workflow',
-    keywords = ['workflows', 'finite state machine', 'task execution'],
-    classifiers = [
+    description='Simple workflows for Python',
+    author='Roman Chyla',
+    url='https://github.com/romanchyla/workflow',
+    keywords=['workflows', 'finite state machine', 'task execution'],
+    classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Development Status :: 5 - Production/Stable',
@@ -43,11 +43,11 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Utilities',
-        ],
+    ],
     test_suite='nose.collector',
     tests_require=['nose', 'cloud', 'coverage'],
-    install_requires = ['configobj>4.7.0'],
-    long_description = """\
+    install_requires=['configobj>4.7.0'],
+    long_description="""\
 Simple workflows for Python
 -------------------------------------
 
@@ -73,8 +73,8 @@ Here is a simple example of a configuration:
     ]
 
 You can probably guess what the processing pipeline does with tokens - the
-whole task is made of four steps and the whole configuration is just stored
-as a Python list. Every task is implemeted as a function that takes two objects:
+whole task is made of four steps and the whole configuration is just stored as
+a Python list. Every task is implemeted as a function that takes two objects:
 
    * currently processed object
    * workflow engine instance
@@ -84,10 +84,10 @@ Example:
 def next_token(obj, eng):
     eng.ContinueNextToken()
 
-There are NO explicit states, conditions, transitions - the job of the engine is
-simply to run the tasks one after another. It is the responsibility of the task
-to tell the engine what is going to happen next; whether to continue, stop,
-jump back, jump forward and few other options.
+There are NO explicit states, conditions, transitions - the job of the engine
+is simply to run the tasks one after another. It is the responsibility of the
+task to tell the engine what is going to happen next; whether to continue,
+stop, jump back, jump forward and few other options.
 
 This is actually a *feature*, I knew that there will be a lot of possible
 exceptions and transition states to implement for NLP processing and I also
