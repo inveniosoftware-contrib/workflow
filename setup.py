@@ -14,6 +14,28 @@ except:
 
 import os
 import re
+import sys
+
+from setuptools.command.test import test as TestCommand
+
+
+class PyTest(TestCommand):
+
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.pytest_args = None
+
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+
+    def run_tests(self):
+        # import here, cause outside the eggs aren't loaded
+        import pytest
+        errno = pytest.main()
+        sys.exit(errno)
+
 
 # Get the version string.  Cannot be done with import!
 with open(os.path.join('workflow', 'version.py'), 'rt') as f:
@@ -44,8 +66,11 @@ setup(
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Utilities',
     ],
-    test_suite='nose.collector',
-    tests_require=['nose', 'cloud', 'coverage'],
+    tests_require=[
+        'pytest', 'pytest-cache', 'pytest-cov', 'pytest-pep8', 'cloud',
+        'coverage'
+    ],
+    cmdclass={'test': PyTest},
     install_requires=['configobj>4.7.0'],
     long_description="""\
 Simple workflows for Python

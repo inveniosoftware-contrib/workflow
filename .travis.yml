@@ -13,11 +13,13 @@ python:
 
 install:
   - pip install --upgrade pip  --use-mirrors
+  - pip install cloud coverage --use-mirrors
+  - pip install pytest pytest-cache pytest-pep8 pytest-cov --use-mirrors
   - pip install coveralls --use-mirrors
   - pip install .
 
 script:
-  - coverage run --source=workflow setup.py test
+  - python -m pytest
 
 after_success:
   - coveralls
