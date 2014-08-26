@@ -7,7 +7,10 @@
 # under the terms of the Revised BSD License; see COPYING.txt file for
 # more details.
 
+from __future__ import print_function
+
 import unittest
+import six
 import sys
 import os
 
@@ -52,7 +55,7 @@ class TestPhoenixWorkflowEngine(PhoenixWorkflowEngine):
 
         # create a new wfe (but make sure we don't call serialization again)
         wfe2 = pickle.dumps(self)
-        assert isinstance(wfe2, basestring)
+        assert isinstance(wfe2, six.string_types)
         wfe2 = pickle.loads(wfe2)
         wfe2.after_processing = lambda objs, eng: []
 
@@ -65,9 +68,9 @@ class TestPhoenixWorkflowEngine(PhoenixWorkflowEngine):
             assert s1 == s2
             assert orig_objs == objects
         else:
-            print 'WFE executed threads, results may be different'
-            print 'original result:', objects
-            print 're-executed res:', orig_objs
+            print('WFE executed threads, results may be different')
+            print('original result:', objects)
+            print('re-executed res:', orig_objs)
 
 
 def suite():

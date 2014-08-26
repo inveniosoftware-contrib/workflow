@@ -312,7 +312,7 @@ class ConfigReader(object):
                 for k, v in replace_keys.items():
                     if k in config:
                         config[k] = v
-        except ConfigObjError, msg:
+        except ConfigObjError as msg:
             if failonerror:
                 raise ConfigObjError(msg)
             else:

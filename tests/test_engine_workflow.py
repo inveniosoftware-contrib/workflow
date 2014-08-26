@@ -8,6 +8,7 @@
 # more details.
 
 import unittest
+import six
 import sys
 import os
 
@@ -89,10 +90,7 @@ def stop_if_str(value=None):
 class FakeToken(object):
 
     def __init__(self, data, **attributes):
-        if isinstance(data, basestring):
-            self.data = unicode(data)
-        else:
-            self.data = data
+        self.data = data
         self.pos = None  # set TokenCollection on obj return
         # here link to TokenCollection (when returning)
         self.backreference = None
@@ -103,10 +101,7 @@ class FakeToken(object):
             self.setFeature(attr_name, attr_value)
 
     def __str__(self):
-        if isinstance(self.data, unicode):
-            return self.data
-        else:
-            return str(self.data)
+        return str(self.data)
 
     def __repr__(self):
         return 'Token(%s, **%s)' % (repr(self.data), repr(self.__attributes))
@@ -159,8 +154,6 @@ class FakeToken(object):
             return None
 
     def setFeature(self, key, value):
-        if isinstance(value, basestring):
-            value = unicode(value)
         self.__attributes[key] = value
 
     def setFeatureKw(self, **kwargs):
@@ -178,7 +171,7 @@ class TestWorkflowEngine(unittest.TestCase):
     def setUp(self):
         self.key = '*'
         self.we = wfe_impl()
-        self.data = u"one\ntwo\nthree\nfour\nfive"
+        self.data = "one\ntwo\nthree\nfour\nfive"
         self.doc = [FakeToken(x, type='*') for x in self.data.splitlines()]
 
     def tearDown(self):

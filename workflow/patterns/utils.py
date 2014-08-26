@@ -7,8 +7,11 @@
 # under the terms of the Revised BSD License; see COPYING.txt file for
 # more details.
 
+from __future__ import print_function
+
 import inspect
 import traceback
+import six
 import sys
 import pstats
 import timeit
@@ -172,7 +175,7 @@ def OBJ_GET(something, cond='all'):
 
     """
     def x(obj, eng):
-        if isinstance(something, basestring):
+        if isinstance(something, six.string_types):
             return something in obj and obj[something]
         else:
             if cond.lower() == 'any':
@@ -246,7 +249,7 @@ def TRY(onecall, retry=1, onfailure=Exception, verbose=True):
             try:
                 onecall(obj, eng)
                 break  # success
-            except WorkflowTransition, msg:
+            except WorkflowTransition:
                 raise  # just let it propagate
             except:
                 if verbose:
@@ -343,8 +346,8 @@ def DEBUG_CYCLE(stmt, setup=None,
     ...
     >>> def engtask(config, something):
     ...     def x(obj, eng):
-    ...         print config
-    ...         print something
+    ...         print(config)
+    ...         print(something)
     ...     return x
     ...
     >>> config = {'some': 'value'}
@@ -423,8 +426,8 @@ def DEBUG_CYCLE(stmt, setup=None,
                 t.obj = obj
                 t.eng = eng
 
-                # print t.src
-                print 'Execution time: %.3s' % (t.timeit())
+                # print(t.src)
+                print('Execution time: %.3s' % (t.timeit()))
             except:
                 traceback.print_exc()
                 lasterr = traceback.format_exc().splitlines()
@@ -487,7 +490,7 @@ def CALLFUNC(func, outkey=None, debug=False, stopper=None,
                         raise Exception(
                             "%s is not inside obj nor eng, try specifying "
                             "Okey or Ekey" % key)
-        except Exception, msg:
+        except Exception as msg:
             eng.log.error(traceback.format_exc())
             eng.log.error(
                 'Check your "oeargs" configuration. '

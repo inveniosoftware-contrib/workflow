@@ -8,6 +8,7 @@
 # more details.
 
 import glob
+import six
 import sys
 import os
 import imp
@@ -139,7 +140,7 @@ def run_workflow(file_or_module,
     @return: workflow engine instance (after its workflow was executed)
     """
 
-    if isinstance(file_or_module, basestring):
+    if isinstance(file_or_module, six.string_types):
         log.info("Loading: %s" % file_or_module)
         workflow = get_workflow(file_or_module)
     elif isinstance(file_or_module, list):

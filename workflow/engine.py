@@ -11,7 +11,6 @@
 
 # we are not using the newseman logging to make this library independent
 import logging
-import new
 import copy
 import pickle
 import sys
@@ -347,7 +346,7 @@ class GenericWorkflowEngine(object):
                             "Processing was stopped: '%s' (object: %s)" % (
                                 str(callbacks), repr(obj)))
                     break
-                except JumpTokenBack, step:
+                except JumpTokenBack as step:
                     if step.args[0] > 0:
                         raise WorkflowError(
                             "JumpTokenBack cannot be positive number")
@@ -356,7 +355,7 @@ class GenericWorkflowEngine(object):
                             'Warning, we go back [%s] objects' % step.args[0])
                     i[0] = max(-1, i[0] - 1 + step.args[0])
                     i[1] = [0]  # reset the callbacks pointer
-                except JumpTokenForward, step:
+                except JumpTokenForward as step:
                     if step.args[0] < 0:
                         raise WorkflowError(
                             "JumpTokenForward cannot be negative number")
@@ -428,7 +427,7 @@ class GenericWorkflowEngine(object):
                 if DEBUG:
                     self.log.debug('Break from this loop')
                 return
-            except JumpCallBack, step:
+            except JumpCallBack as step:
                 if DEBUG:
                     self.log.debug(
                         'Warning, we go [%s] calls back' % step.args[0])
@@ -436,7 +435,7 @@ class GenericWorkflowEngine(object):
                     raise WorkflowError(
                         "JumpCallBack cannot be positive number")
                 y[indent] = max(-1, y[indent] + step.args[0] - 1)
-            except JumpCallForward, step:
+            except JumpCallForward as step:
                 if DEBUG:
                     self.log.debug('We skip [%s] calls' % step.args[0])
                 if step.args[0] < 0:
@@ -476,7 +475,7 @@ class GenericWorkflowEngine(object):
         if key:
             try:
                 return self._callbacks[key]
-            except KeyError, e:
+            except KeyError as e:
                 raise WorkflowMissingKey(
                     'No workflow is registered for the key: %s. Perhaps you '
                     'forgot to load workflows or the workflow definition for '
@@ -493,7 +492,7 @@ class GenericWorkflowEngine(object):
         except WorkflowMissingKey:
             self._callbacks[key] = []
             return self._callbacks[key].append(func)
-        except Exception, e:
+        except Exception as e:
             self.log.debug(
                 'Impossible to add callback %s for key: %s' % (str(func), key))
             self.log.debug(e)

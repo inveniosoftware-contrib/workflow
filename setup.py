@@ -71,7 +71,7 @@ setup(
         'coverage'
     ],
     cmdclass={'test': PyTest},
-    install_requires=['configobj>4.7.0'],
+    install_requires=['configobj>4.7.0', 'six'],
     long_description="""\
 Simple workflows for Python
 -------------------------------------

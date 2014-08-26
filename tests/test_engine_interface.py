@@ -8,6 +8,7 @@
 # more details.
 
 import unittest
+import six
 import sys
 import os
 
@@ -78,14 +79,14 @@ class TestGenericWorkflowEngine(unittest.TestCase):
                                         callback_chooser='x',
                                         before_processing='x',
                                         after_processing='x')
-        except Exception, msg:
-            assert 'must be a callable' not in msg
+        except Exception as msg:
+            assert 'must be a callable' in str(msg)
 
         try:
             we3 = GenericWorkflowEngine(callback_chooser=asterisk_chooser,
                                         after_processing='x')
-        except Exception, msg:
-            assert 'must be a callable' not in msg
+        except Exception as msg:
+            assert 'must be a callable' in str(msg)
 
         we1.addManyCallbacks('*', [
             m('mouse'),

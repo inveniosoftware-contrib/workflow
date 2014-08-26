@@ -8,11 +8,10 @@
 # more details.
 
 import threading
-import thread
-import Queue
 import time
 import copy
 
+from six.moves import _thread as thread, queue
 
 MAX_TIMEOUT = 30000
 
@@ -210,7 +209,6 @@ def PARALLEL_SPLIT(*args):
     @postcondition: eng object will contain lock (to be used
         by threads)
     """
-
     def _parallel_split(obj, eng, calls):
         lock = thread.allocate_lock()
         i = 0
@@ -332,10 +330,7 @@ def SIMPLE_MERGE(*args):
 # ------------------------------------------------------------- #
 
 
-class MyTimeoutQueue(Queue.Queue):
-
-    def __init__(self, *args):
-        Queue.Queue.__init__(self, *args)
+class MyTimeoutQueue(queue.Queue):
 
     def join_with_timeout(self, timeout):
         self.all_tasks_done.acquire()
