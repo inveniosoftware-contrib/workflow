@@ -60,6 +60,7 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
         'Development Status :: 5 - Production/Stable',
         'Environment :: Other Environment',
         'Intended Audience :: Developers',
@@ -71,7 +72,7 @@ setup(
         'Topic :: Utilities',
     ],
     tests_require=[
-        'pytest', 'pytest-cache', 'pytest-cov', 'pytest-pep8', 'cloud',
+        'pytest', 'pytest-cache', 'pytest-cov', 'pytest-pep8',
         'coverage'
     ],
     cmdclass={'test': PyTest},
