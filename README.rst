@@ -65,10 +65,11 @@ Example:
     def next_token(obj, eng):
         eng.ContinueNextToken()
 
-There are NO explicit states, conditions, transitions - the job of the engine is
-simply to run the tasks one after another. It is the responsibility of the task
-to tell the engine what is going to happen next; whether to continue, stop,
-jump back, jump forward and few other options.
+There are NO explicit states, conditions, transitions - the job of the
+engine is simply to run the tasks one after another. It is the
+responsibility of the task to tell the engine what is going to happen
+next; whether to continue, stop, jump back, jump forward and few other
+options.
 
 This is actually a *feature*, I knew that there will be a lot of possible
 exceptions and transition states to implement for NLP processing and I also
@@ -78,10 +79,8 @@ you can make more errors and workflow engine will not warn you.
 The workflow module comes with many patterns that can be directly used in the
 definition of the pipeline, such as IF, IF_NOT, PARALLEL_SPLIT and others.
 
-*This version requires Python 2 and many of the workflow patterns (such as IF,
-XOR, WHILE) are implemented using lambdas, therefore not suitable for Python 3.*
-
-The individual tasks then can influence the whole pipeline, available ''commands'' are:
+The individual tasks then can influence the whole pipeline, available
+''commands'' are:
 
 .. code-block:: text
 
@@ -129,8 +128,8 @@ We can then write *workflow definition* like:
 Tasks
 -----
 
-Tasks are simple python functions, we can enforce rules (not done yet!) in a pythonic
-way using pydoc conventions, consider this:
+Tasks are simple python functions, we can enforce rules (not done yet!) in
+a pythonic way using pydoc conventions, consider this:
 
 .. code-block:: python
 
@@ -150,14 +149,15 @@ way using pydoc conventions, consider this:
        """
        ...
 
-So using the python docs, we can instruct workflow engine what types of arguments
-are acceptable, what is the expected outcome and what happens after the task finished.
-And let's say, there will be a testing framework which will run the workflow
-pipeline with fake arguments and will test all sorts of conditions. So, the
-configuration is not cluttered with states and transitions that are possible,
-developers can focus on implementation of the individual tasks, and site admins
-should have a good understanding what the task is supposed to do -- the description
-of the task will be displayed through the web GUI.
+So using the python docs, we can instruct workflow engine what types of
+arguments are acceptable, what is the expected outcome and what happens
+after the task finished.  And let's say, there will be a testing framework
+which will run the workflow pipeline with fake arguments and will test all
+sorts of conditions. So, the configuration is not cluttered with states
+and transitions that are possible, developers can focus on implementation
+of the individual tasks, and site admins should have a good understanding
+what the task is supposed to do -- the description of the task will be
+displayed through the web GUI.
 
 Some examples
 -------------
@@ -171,8 +171,8 @@ patterns.
 
 .. image:: http://www.yawlfoundation.org/images/patterns/basic_ps.jpg
 
-This pattern is called Parallel split (as tasks B,C,D are all started in parallel
-after task A). It could be implemented like this:
+This pattern is called Parallel split (as tasks B,C,D are all started in
+parallel after task A). It could be implemented like this:
 
 .. code-block:: python
 

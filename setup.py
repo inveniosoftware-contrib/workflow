@@ -56,6 +56,10 @@ setup(
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
         'Development Status :: 5 - Production/Stable',
         'Environment :: Other Environment',
         'Intended Audience :: Developers',
@@ -121,8 +125,5 @@ you can make more errors and workflow engine will not warn you.
 
 The workflow module comes with many patterns that can be directly used in the
 definition of the pipeline, such as IF, IF_NOT, PARALLEL_SPLIT and others.
-
-This version requires Python 2 and many of the workflow patterns (such as IF,
-XOR, WHILE) are implemented using lambdas, therefore not suitable for Python 3.
 """
 )
