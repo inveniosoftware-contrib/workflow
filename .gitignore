@@ -1,10 +1,12 @@
 *.egg
 *.egg-info
+
 *.pyc
 *~
 .cache
 .coverage
 .ropeproject
+.tox
 MANIFEST
 build
 build/*
