@@ -13,7 +13,9 @@ import os
 
 from workflow.config import config_reader
 
+
 class TestConfig(unittest.TestCase):
+
     """Tests of the WE interface"""
 
     def setUp(self):
@@ -45,4 +47,4 @@ def suite():
 
 if __name__ == '__main__':
     unittest.main()
-    #unittest.TextTestRunner(verbosity=2).run(suite())
+    # unittest.TextTestRunner(verbosity=2).run(suite())

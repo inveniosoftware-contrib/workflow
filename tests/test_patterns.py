@@ -21,20 +21,24 @@ from workflow.engine import GenericWorkflowEngine
 import workflow.patterns.controlflow as cf
 import workflow.patterns.utils as ut
 
+
 def i(key):
     def _i(obj, eng):
         obj.insert(0, key)
     return _i
+
 
 def a(key):
     def _a(obj, eng):
         obj.append(key)
     return _a
 
+
 def e(key, val):
     def _e(obj, eng):
         eng.setVar(key, val)
     return _e
+
 
 def printer(val):
     def _printer(obj, eng):
@@ -53,8 +57,8 @@ def printer(val):
     return _printer
 
 
-
 class TestGenericWorkflowEngine(unittest.TestCase):
+
     """Tests of the WE interface"""
 
     def setUp(self):
@@ -79,9 +83,9 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         doc = self.getDoc()
 
         we.setWorkflow([i('add'),
-                        cf.IF_ELSE(lambda o,e: o[1] == 'three',
+                        cf.IF_ELSE(lambda o, e: o[1] == 'three',
                                    [a('3'), a('33')],
-                                   [a('other'), [a('nested'), a('branch')]] ),
+                                   [a('other'), [a('nested'), a('branch')]]),
                         a('end')])
         we.process(doc)
 
@@ -93,13 +97,12 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         assert r[3] == 'add four other nested branch end'
         assert r[4] == 'add five other nested branch end'
 
-
     def test_IF_ELSE02(self):
         we = GenericWorkflowEngine()
         doc = self.getDoc()
 
         we.setWorkflow([i('add'),
-                        cf.IF_ELSE(lambda o,e: o[1] == 'three',
+                        cf.IF_ELSE(lambda o, e: o[1] == 'three',
                                    a('3'),
                                    a('other'))
                         ])
@@ -120,28 +123,28 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         doc[3].append('4')
 
         def test(v):
-            return lambda o,e: v in o
+            return lambda o, e: v in o
 
         we.setWorkflow([i('add'),
                         cf.IF_ELSE(
-                                   test('three'),
-                                   [a('xxx'), cf.IF_ELSE(test('xxx'),
-                                                         [a('6'), cf.IF_ELSE(
-                                                                             test('6'),
-                                                                             a('six'),
-                                                                             (a('only-3s'), a('error')))],
-                                                         a('ok'))],
-                                   [cf.IF_ELSE(
-                                        test('4'),
-                                        cf.IF_ELSE(test('four'),
-                                                [a('44'), [[[a('forty')]]]],
-                                                a('error')),
-                                        a('not-four'))]),
-                        a('end'),
-                        cf.IF_ELSE(test('error'),
-                                a('gosh!'),
-                                a('OK'))
-                        ])
+            test('three'),
+            [a('xxx'), cf.IF_ELSE(test('xxx'),
+                                  [a('6'), cf.IF_ELSE(
+                                      test('6'),
+                                      a('six'),
+                                      (a('only-3s'), a('error')))],
+                                  a('ok'))],
+            [cf.IF_ELSE(
+                test('4'),
+                cf.IF_ELSE(test('four'),
+                           [a('44'), [[[a('forty')]]]],
+                           a('error')),
+                a('not-four'))]),
+            a('end'),
+            cf.IF_ELSE(test('error'),
+                       a('gosh!'),
+                       a('OK'))
+        ])
         we.process(doc)
 
         r = [' '.join(doc[x]) for x in range(len(doc))]
@@ -160,14 +163,14 @@ class TestGenericWorkflowEngine(unittest.TestCase):
 
         we.setWorkflow([i('start'),
                         cf.PARALLEL_SPLIT(
-                                          printer('p1'),
-                                          printer('p2'),
-                                          printer('p3'),
-                                          printer('p4'),
-                                          printer('p5')),
-                        lambda o,e: time.sleep(.1),
-                        a('end')
-                        ])
+            printer('p1'),
+            printer('p2'),
+            printer('p3'),
+            printer('p4'),
+            printer('p5')),
+            lambda o, e: time.sleep(.1),
+            a('end')
+        ])
         we.process(doc)
         r = [' '.join(doc[x]) for x in range(len(doc))]
 
@@ -185,7 +188,6 @@ class TestGenericWorkflowEngine(unittest.TestCase):
             assert pos < len(doc[x])
             all_pos.add(pos)
 
-
     # --------------- nested parallel splits --------------------
     def test_PARALLEL_SPLIT02(self):
         """TODO: this test is failing, but that is because sometimes it does
@@ -196,21 +198,22 @@ class TestGenericWorkflowEngine(unittest.TestCase):
 
         we.setWorkflow([i('start'),
                         cf.PARALLEL_SPLIT(
-                                          [cf.PARALLEL_SPLIT(
-                                                            printer('p0'),
-                                                            printer('p0a'),
-                                                                cf.PARALLEL_SPLIT(printer('p0b'), printer('p0c')),
-                                                            ), printer('xx')],
-                                          [a('AAA'), printer('p2b')],
-                                          printer('p3'),
-                                          [a('p4a'), printer('p4b'), printer('p4c')],
-                                          [printer('p5'), cf.PARALLEL_SPLIT(
-                                                                            printer('p6'),
-                                                                            printer('p7'),
-                                                                            [printer('p8a'), printer('p8b')],
-                                                                            )]),
-                        a('end')
-                        ])
+            [cf.PARALLEL_SPLIT(
+                printer('p0'),
+                printer('p0a'),
+                cf.PARALLEL_SPLIT(printer('p0b'), printer('p0c')),
+            ), printer('xx')],
+            [a('AAA'), printer('p2b')],
+            printer('p3'),
+            [a('p4a'), printer('p4b'),
+             printer('p4c')],
+            [printer('p5'), cf.PARALLEL_SPLIT(
+                printer('p6'),
+                printer('p7'),
+                [printer('p8a'), printer('p8b')],
+            )]),
+            a('end')
+        ])
         we.process(doc)
 
         # give threads time to finish
@@ -221,10 +224,9 @@ class TestGenericWorkflowEngine(unittest.TestCase):
 
         # at least the fist object should have them all
         # print doc[0]
-        for x in ['p0', 'p0a', 'p0b', 'p0c', 'xx', 'AAA', 'p2b', 'p3', 'p4a', 'p4b', 'p4c', 'p5', 'p6', 'p8a', 'p8b']:
-            doc[0].index(x) #will fail if not present
-
-
+        for x in ['p0', 'p0a', 'p0b', 'p0c', 'xx', 'AAA', 'p2b', 'p3', 'p4a',
+                  'p4b', 'p4c', 'p5', 'p6', 'p8a', 'p8b']:
+            doc[0].index(x)  # will fail if not present
 
     # ------------ parallel split that does nasty things --------------
     def test_PARALLEL_SPLIT03(self):
@@ -233,26 +235,30 @@ class TestGenericWorkflowEngine(unittest.TestCase):
 
         we.setWorkflow([i('start'),
                         cf.PARALLEL_SPLIT(
-                          [cf.IF(lambda obj, eng: 'jump-verified' in obj, a('error')),
-                           cf.PARALLEL_SPLIT(
-                                [cf.IF(lambda obj, eng: 'nasty-jump' in obj,
-                                       [a('jump-ok'),
-                                        lambda obj, eng: ('nasty-jump' in obj and obj.append('jump-verified'))]),
-                                cf.PARALLEL_SPLIT(
-                                                  a('ok-1'),
-                                                   a('ok-2'),
-                                                   cf.IF(lambda obj, eng: 'ok-3' not in obj,
-                                                            lambda obj, eng: obj.append('ok-3') and eng.breakFromThisLoop()),
-                                                            a('ok-4')),
+            [cf.IF(lambda obj, eng: 'jump-verified' in obj, a('error')),
+             cf.PARALLEL_SPLIT(
+                [cf.IF(lambda obj, eng: 'nasty-jump' in obj,
+                       [a('jump-ok'),
+                        lambda obj, eng: ('nasty-jump' in obj and
+                                          obj.append('jump-verified'))]),
+                 cf.PARALLEL_SPLIT(
+                    a('ok-1'),
+                    a('ok-2'),
+                    cf.IF(lambda obj, eng: 'ok-3' not in obj,
+                          lambda obj, eng: (obj.append('ok-3') and
+                                            eng.breakFromThisLoop())),
+                    a('ok-4')),
 
-                                a('xx'),
-                                lambda obj, eng: 'jump-verified' in obj and eng.breakFromThisLoop(),
-                                a('nasty-jump'),
-                                cf.TASK_JUMP_IF(lambda obj, eng: 'jump-verified' not in obj, -100)]),
-                                ],
-                          [a('AAA'), a('p2b')]),
-                        a('end')
-                        ])
+                 a('xx'),
+                 lambda obj, eng: ('jump-verified' in obj and
+                                   eng.breakFromThisLoop()),
+                 a('nasty-jump'),
+                 cf.TASK_JUMP_IF(
+                    lambda obj, eng: 'jump-verified' not in obj, -100)]),
+             ],
+            [a('AAA'), a('p2b')]),
+            a('end')
+        ])
         we.process(doc)
         # give threads time to finish
         time.sleep(.5)
@@ -262,10 +268,9 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         # at least the fist object should have them all
         # print doc[0]
         for x in ['nasty-jump', 'jump-verified', 'ok-3']:
-            d.index(x) #will fail if not present
+            d.index(x)  # will fail if not present
 
         assert d.count('ok-1') > 1
-
 
     # --------------- choice pattern --------------------
 
@@ -294,7 +299,6 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         assert 'error' not in d
         assert len(doc[0]) == 6
 
-
     def test_CHOICE02(self):
         we = GenericWorkflowEngine()
         doc = self.getDoc()[0:1]
@@ -307,7 +311,8 @@ class TestGenericWorkflowEngine(unittest.TestCase):
                                   ('bom', lambda obj, eng: obj.append('bum')),
                                   ('one', lambda obj, eng: obj.append('bim')),
                                   ('bum', cf.STOP()),
-                                  ('end', lambda obj, eng: obj.append('error')),
+                                  ('end', lambda obj,
+                                   eng: obj.append('error')),
                                   ('bam', lambda obj, eng: obj.append('bom')),
                                   ('bim', lambda obj, eng: obj.append('bam'))),
                         cf.TASK_JUMP_BWD(-1)])
@@ -319,7 +324,6 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         assert 'error' not in d
         assert len(doc[0]) == 6
 
-
     def test_CHOICE03(self):
         we = GenericWorkflowEngine()
         doc = self.getDoc()[0:1]
@@ -330,7 +334,8 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         we.setWorkflow([i('start'),
                         cf.CHOICE(arbiter,
                                   ('bam', lambda obj, eng: obj.append('bom')),
-                                  ('end', lambda obj, eng: obj.append('error')),
+                                  ('end', lambda obj,
+                                   eng: obj.append('error')),
                                   ('bim', lambda obj, eng: obj.append('bam')),
                                   bom=(lambda obj, eng: obj.append('bum')),
                                   one=(lambda obj, eng: obj.append('bim')),
@@ -352,13 +357,13 @@ class TestGenericWorkflowEngine(unittest.TestCase):
 
         we.setWorkflow([i('start'),
                         cf.SIMPLE_MERGE(
-                                  lambda obj, eng: obj.append('bom'),
-                                  lambda obj, eng: obj.append('error'),
-                                  lambda obj, eng: obj.append('bam'),
-                                  lambda obj, eng: obj.append('bum'),
-                                  lambda obj, eng: obj.append('end'),
-                                  ),
-                        ])
+            lambda obj, eng: obj.append('bom'),
+            lambda obj, eng: obj.append('error'),
+            lambda obj, eng: obj.append('bam'),
+            lambda obj, eng: obj.append('bum'),
+            lambda obj, eng: obj.append('end'),
+        ),
+        ])
         we.process(doc)
 
         d = ' '.join(doc[0])
@@ -374,18 +379,17 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         we = GenericWorkflowEngine()
         doc = self.getDoc()[0:1]
 
-
-
         we.setWorkflow([i('start'),
                         ut.RUN_WF([
                                   lambda obj, eng: obj.append('bom'),
                                   lambda obj, eng: obj.append('bam'),
                                   lambda obj, eng: obj.append('bum'),
                                   lambda obj, eng: obj.append('end'),
-                                  lambda obj, eng: obj.append(eng.getVar('eng-end', '')),
+                                  lambda obj, eng: obj.append(
+                                      eng.getVar('eng-end', '')),
                                   e('eng-end', 'eng-end')
                                   ],
-                                  data_connector=lambda obj,eng: [obj],
+                                  data_connector=lambda obj, eng: [obj],
                                   outkey='#wfe',
                                   ),
                         ])
@@ -409,7 +413,7 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         assert d.count('bam') == 2
         assert d.count('bum') == 2
         assert 'end' in d
-        assert 'eng-end' in d # now it must be present
+        assert 'eng-end' in d  # now it must be present
 
     def test_RUN_WF02(self):
         """Test wfe is reinit=True - eng must not remember"""
@@ -422,10 +426,11 @@ class TestGenericWorkflowEngine(unittest.TestCase):
                                   lambda obj, eng: obj.append('bam'),
                                   lambda obj, eng: obj.append('bum'),
                                   lambda obj, eng: obj.append('end'),
-                                  lambda obj, eng: obj.append(eng.getVar('eng-end', '')),
+                                  lambda obj, eng: obj.append(
+                                      eng.getVar('eng-end', '')),
                                   e('eng-end', 'eng-end')
                                   ],
-                                  data_connector=lambda obj,eng: [obj],
+                                  data_connector=lambda obj, eng: [obj],
                                   outkey='#wfe',
                                   reinit=True
                                   ),
@@ -450,15 +455,15 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         assert d.count('bam') == 2
         assert d.count('bum') == 2
         assert 'end' in d
-        assert 'eng-end' not in d # it must not be present if reinit=True
+        assert 'eng-end' not in d  # it must not be present if reinit=True
 
 
 def suite():
     suite = unittest.TestSuite()
-    #suite.addTest(TestGenericWorkflowEngine('test_RUN_WF02'))
+    # suite.addTest(TestGenericWorkflowEngine('test_RUN_WF02'))
     suite.addTest(unittest.makeSuite(TestGenericWorkflowEngine))
     return suite
 
 if __name__ == '__main__':
-    #unittest.main()
+    # unittest.main()
     unittest.TextTestRunner(verbosity=2).run(suite())

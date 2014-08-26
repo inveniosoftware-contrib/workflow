@@ -8,6 +8,7 @@
 # more details.
 
 import glob
+import six
 import sys
 import os
 import imp
@@ -21,22 +22,24 @@ from workflow.patterns import PROFILE
 
 log = main_engine.get_logger('workflow.run-worklfow')
 
+
 def run(selection,
         listwf=None,
         places=None,
         verbose=False,
         profile=None,
         **kwargs):
-    '''
+    """
 Example usage: %prog -l
                %prog 1 [to select first workflow to run]
 
 usage: %prog glob_pattern(s) [options]
 -l, --listwf: list available workflows
--i, --places = places: list of glob patterns to search for workflows (separate with commas!)
+-i, --places = places: list of glob patterns to search for workflows
+                       (separate with commas!)
 -p, --profile=profile: profile the workflow and save output as x
 -v, --verbose: makes for a lot of output
-'''
+"""
 
     workflows = set()
 
@@ -59,7 +62,9 @@ usage: %prog glob_pattern(s) [options]
         for i in range(len(workflows)):
             print "%d - %s" % (i, short_names[i])
         if not len(workflows):
-            log.warning('No workflows found using default search path: \n%s' % '\n'.join(places))
+            log.warning(
+                'No workflows found using default search path: \n%s' % (
+                    '\n'.join(places)))
 
     if workflows:
         for s in selection:
@@ -76,7 +81,9 @@ usage: %prog glob_pattern(s) [options]
                 if len(ids) == 0:
                     raise Exception("I found no wf for this id: %s" % (s, ))
                 elif len(ids) > 1:
-                    raise Exception("There is more than one wf for this id: %s (%s)" % (s, ids))
+                    raise Exception(
+                        "There is more than one wf for this id: %s (%s)" % (
+                            s, ids))
                 else:
                     if verbose:
                         run_workflow(workflows[ids[0]],
@@ -95,15 +102,16 @@ def find_workflow(workflows, name):
         i += 1
     return candidates
 
+
 def run_workflow(file_or_module,
                  data=None,
                  engine=None,
-                 processing_factory = None,
-                 callback_chooser = None,
-                 before_processing = None,
-                 after_processing = None,
-                 profile = None):
-    """Runs the workflow
+                 processing_factory=None,
+                 callback_chooser=None,
+                 before_processing=None,
+                 after_processing=None,
+                 profile=None):
+    """Run the workflow
     @var file_or_module: you can pass string (filepath) to the
         workflow module, the module will be loaded as an anonymous
         module (from the file) and <module>.workflow will be
@@ -132,14 +140,13 @@ def run_workflow(file_or_module,
     @return: workflow engine instance (after its workflow was executed)
     """
 
-    if isinstance(file_or_module, basestring):
+    if isinstance(file_or_module, six.string_types):
         log.info("Loading: %s" % file_or_module)
         workflow = get_workflow(file_or_module)
     elif isinstance(file_or_module, list):
         workflow = WorkflowModule(file_or_module)
     else:
         workflow = file_or_module
-
 
     if workflow:
         if profile:
@@ -164,7 +171,7 @@ def run_workflow(file_or_module,
                                                before_processing,
                                                after_processing)
                 datae.process(data)
-                if data[0]: # get prepared data
+                if data[0]:  # get prepared data
                     data = data[0]
 
         log.info('Running the workflow')
@@ -173,12 +180,13 @@ def run_workflow(file_or_module,
     else:
         raise Exception('No workfow found in: %s' % file_or_module)
 
+
 def create_workflow_engine(workflow,
                            engine=None,
-                           processing_factory = None,
-                           callback_chooser = None,
-                           before_processing = None,
-                           after_processing = None):
+                           processing_factory=None,
+                           callback_chooser=None,
+                           before_processing=None,
+                           after_processing=None):
     """Instantiate engine and set the workflow and callbacks
     directly
     @var workflow: normal workflow tasks definition
@@ -192,9 +200,11 @@ def create_workflow_engine(workflow,
     """
     if engine is None:
         engine = main_engine.GenericWorkflowEngine
-    wf = engine(processing_factory, callback_chooser, before_processing, after_processing)
+    wf = engine(processing_factory, callback_chooser,
+                before_processing, after_processing)
     wf.setWorkflow(workflow)
     return wf
+
 
 def get_workflow(file):
     """ Initializes module into a separate object (not included in sys) """
@@ -217,8 +227,8 @@ def get_workflow(file):
     # old_cwd = os.getcwd()
 
     try:
-        #filedir, filename = os.path.split(file)
-        #os.chdir(filedir)
+        # filedir, filename = os.path.split(file)
+        # os.chdir(filedir)
         execfile(file, x.__dict__)
     except Exception, excp:
         sys.stderr.write(traceback.format_exc())
@@ -227,6 +237,7 @@ def get_workflow(file):
         return
 
     return x
+
 
 def import_workflow(workflow):
     """Import workflow module
@@ -238,23 +249,27 @@ def import_workflow(workflow):
     return mod
 
 
-
-
-
 class TalkativeWorkflowEngine(main_engine.GenericWorkflowEngine):
     counter = 0
+
     def __init__(self, *args, **kwargs):
         main_engine.GenericWorkflowEngine.__init__(self, *args, **kwargs)
-        self.log = main_engine.get_logger('TalkativeWFE<%d>' % TalkativeWorkflowEngine.counter)
+        self.log = main_engine.get_logger(
+            'TalkativeWFE<%d>' % TalkativeWorkflowEngine.counter)
         TalkativeWorkflowEngine.counter += 1
 
     def execute_callback(self, callback, obj):
         obj_rep = []
         max_len = 60
+
         def val_format(v):
             return '<%s ...>' % repr(v)[:max_len]
+
         def func_format(c):
-            return '<%s ...%s:%s>' % (c.func_name, c.func_code.co_filename[-max_len:], c.func_code.co_firstlineno)
+            return '<%s ...%s:%s>' % (
+                c.func_name,
+                c.func_code.co_filename[-max_len:],
+                c.func_code.co_firstlineno)
         if isinstance(obj, dict):
             for k, v in obj.items():
                 obj_rep.append('%s:%s' % (k, val_format(v)))
@@ -268,11 +283,14 @@ class TalkativeWorkflowEngine(main_engine.GenericWorkflowEngine):
         self.log.debug('%s ( %s )' % (func_format(callback), obj_rep))
         callback(obj, self)
 
+
 class WorkflowModule(object):
-    """This is used just as a replacement for when module is needed but workflow
-    was supplied directly"""
+
+    """Workflow wrapper."""
+
     def __init__(self, workflow):
         self.workflow = workflow
+
 
 def usage():
     print """
@@ -296,15 +314,17 @@ options:
     the less messages are printed
 -h, --help: this help message
 
-""" % {'prog' : os.path.basename(__file__) }
+""" % {'prog': os.path.basename(__file__)}
+
 
 def main():
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "lp:o:ve:h", ['list', 'places=', 'profile=', 'verbose', 'Vlevel=', 'help'])
+        opts, args = getopt.getopt(sys.argv[1:], "lp:o:ve:h", [
+            'list', 'places=', 'profile=', 'verbose', 'Vlevel=', 'help'])
     except getopt.GetoptError, err:
         # print help information and exit:
-        print str(err) # will print something like "option -a not recognized"
+        print str(err)  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
@@ -334,15 +354,15 @@ def main():
         else:
             assert False, "unhandled option %s" % o
 
-
-
     if (not len(args) or not len(opts)) and 'listwf' not in kw_args:
         usage()
         sys.exit()
 
     if 'places' not in kw_args:
         d = os.path.dirname(os.path.abspath(__file__))
-        kw_args['places'] = ['%s/workflows/*.py' % d, '%s/workflows/*.pyw' % d, '%s/workflows/*.cfg' % d]
+        kw_args['places'] = ['%s/workflows/*.py' % d,
+                             '%s/workflows/*.pyw' % d,
+                             '%s/workflows/*.cfg' % d]
 
     run(args, **kw_args)
 
