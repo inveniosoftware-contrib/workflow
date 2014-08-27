@@ -82,6 +82,9 @@ setup(
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Utilities',
     ],
+    extras_require={
+        "docs": ["sphinx", "sphinx_rtd_theme"],
+    },
     tests_require=tests_require,
     cmdclass={'test': PyTest},
     install_requires=['configobj>4.7.0', 'six'] + tests_require,

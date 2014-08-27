@@ -1,6 +1,5 @@
 *.egg
 *.egg-info
-
 *.pyc
 *~
 .cache
@@ -13,3 +12,6 @@ build/*
 coverage.xml
 dist
 dist/*
+docs/_build
+docs/db
+docs/static

@@ -7,5 +7,5 @@
 # under the terms of the Revised BSD License; see COPYING.txt file for
 # more details.
 
-coverage run setup.py test
-coverage report -m
+sphinx-build -qnNW docs docs/_build/html
+python setup.py test

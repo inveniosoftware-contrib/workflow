@@ -16,9 +16,10 @@ python:
 install:
   - pip install --upgrade pip  --use-mirrors
   - pip install coveralls --use-mirrors
-  - pip install .
+  - pip install -e .[docs]
 
 script:
+  - sphinx-build -qnNW docs docs/_build/html
   - python setup.py test
 
 after_success:
