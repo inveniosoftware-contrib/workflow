@@ -15,13 +15,11 @@ python:
 
 install:
   - pip install --upgrade pip  --use-mirrors
-  - pip install coverage --use-mirrors
-  - pip install pytest pytest-cache pytest-pep8 pytest-cov --use-mirrors
   - pip install coveralls --use-mirrors
   - pip install .
 
 script:
-  - python -m pytest
+  - python setup.py test
 
 after_success:
   - coveralls

@@ -7,15 +7,13 @@
 # under the terms of the Revised BSD License; see COPYING.txt file for
 # more details.
 
-try:
-    from setuptools import setup
-except:
-    from distutils.core import setup
+"""Setup script for workflow package."""
 
 import os
 import re
 import sys
 
+from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
 
@@ -32,9 +30,8 @@ class PyTest(TestCommand):
 
     def run_tests(self):
         # import here, cause outside the eggs aren't loaded
-        import pytest
-        errno = pytest.main()
-        sys.exit(errno)
+        import subprocess
+        raise SystemExit(subprocess.call([sys.executable, '-m', 'pytest']))
 
 
 # Get the version string.  Cannot be done with import!
@@ -43,6 +40,11 @@ with open(os.path.join('workflow', 'version.py'), 'rt') as f:
         '__version__\s*=\s*"(?P<version>.*)"\n',
         f.read()
     ).group('version')
+
+tests_require = [
+    'pytest', 'pytest-cache', 'pytest-cov', 'pytest-pep8',
+    'coverage'
+]
 
 setup(
     name='workflow',
@@ -71,12 +73,9 @@ setup(
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Utilities',
     ],
-    tests_require=[
-        'pytest', 'pytest-cache', 'pytest-cov', 'pytest-pep8',
-        'coverage'
-    ],
+    tests_require=tests_require,
     cmdclass={'test': PyTest},
-    install_requires=['configobj>4.7.0', 'six'],
+    install_requires=['configobj>4.7.0', 'six'] + tests_require,
     long_description="""\
 Simple workflows for Python
 -------------------------------------
