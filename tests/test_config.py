@@ -77,9 +77,9 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(test_io.getvalue(), "wf warn\n",
                          "Wf logger should have one msg")
 
-        root_io.truncate(0)
-        other_io.truncate(0)
-        test_io.truncate(0)
+        root_io.seek(0)
+        other_io.seek(0)
+        test_io.seek(0)
 
         # now set too to DEBUG and wf to INFO
         logging.root.setLevel(logging.DEBUG)
