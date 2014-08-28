@@ -11,14 +11,13 @@
 
 # we are not using the newseman logging to make this library independent
 import logging
-import copy
 import pickle
 import sys
 
 from .version import __version__
 
 DEBUG = False
-LOGGING_LEVEL = logging.INFO
+LOGGING_LEVEL = logging.NOTSET
 LOG = None
 
 
@@ -725,23 +724,12 @@ def reset_all_loggers(level):
     """Set logging level for every active logger.
 
     .. note:: Beware, if the global manager level is higher, then still nothing
-    will be see. Manager level has precedence - use set_global_level.
+    will be seen. Manager level has precedence.
     """
     for l in _loggers:
-        l.setLevel(LOGGING_LEVEL)
+        l.setLevel(level)
 
 
-def set_global_level(level):
-    """Set the global level to the manager.
-
-    The parent manager of all the newseman loggers. With this one call, you can
-    switch off all loggers at once. But you can't enable them using this call,
-    because every logger may have a specific log level.
-    """
-    global LOGGING_LEVEL
-    LOGGING_LEVEL = int(level)
-    LOG.manager.disable = LOGGING_LEVEL - 1
 
 _loggers = []
 LOG = get_logger('workflow')
-set_global_level(LOGGING_LEVEL)
