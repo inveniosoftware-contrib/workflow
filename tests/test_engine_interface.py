@@ -8,7 +8,6 @@
 # more details.
 
 import unittest
-import six
 import sys
 import os
 

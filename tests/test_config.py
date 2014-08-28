@@ -10,7 +10,7 @@
 import unittest
 import os
 import logging
-from StringIO import StringIO
+from six import StringIO
 
 from workflow.config import config_reader
 
