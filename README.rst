@@ -324,6 +324,12 @@ Running the test suite is as simple as:
 
    $ python setup.py test
 
+on Windows, you may want to do:
+
+.. code-block:: console
+
+   $ python setup.py test --pytest-args=tests
+
 or, to also show code coverage:
 
 .. code-block:: console
