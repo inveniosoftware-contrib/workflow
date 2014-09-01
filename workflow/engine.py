@@ -201,7 +201,7 @@ class GenericWorkflowEngine(object):
         raise HaltProcessing
 
     def jumpTokenForward(self, offset):
-        """Jump to `x`th token."""
+        """Jump to `x` th token."""
         raise JumpTokenForward(offset)
 
     def jumpTokenBack(self, offset):
@@ -209,7 +209,7 @@ class GenericWorkflowEngine(object):
         raise JumpTokenBack(offset)
 
     def jumpCallForward(self, offset):
-        """Jump to `x`th call in this loop."""
+        """Jump to `x` th call in this loop."""
         raise JumpCallForward(offset)
 
     def jumpCallBack(self, offset):
@@ -226,12 +226,12 @@ class GenericWorkflowEngine(object):
     def configure(self, **kwargs):
         """Method to set attributes of the workflow engine.
 
-        ..note:: Use with extreme care (well, you can set up the attrs
+        .. note:: Use with extreme care (well, you can set up the attrs
             directly, I am not protecting them, but that is not nice).
             Used mainly if you want to change the engine's callbacks -
             if processing factory `before_processing`, `after_processing`.
 
-        :param **kwargs: dictionary of values
+        :param kwargs: dictionary of values
         """
         for (key, value) in kwargs.items():
             if hasattr(self, key):
@@ -246,7 +246,7 @@ class GenericWorkflowEngine(object):
         """Start processing.
 
         :param objects: either a list of object or instance of
-            :class:`~workflow.objects.TokenizedDocument`
+                `TokenizedDocument`
         :return: You never know what will be returned from the workflow.
                 But many exceptions can be raised, so watch out for them,
                 if there happened an exception, you can be sure something
@@ -388,7 +388,7 @@ class GenericWorkflowEngine(object):
             at the indent level is increases after the task has
             finished processing; on error it will point to the
             last executed task position.
-                 The position adjusting also happens after the
+            The position adjusting also happens after the
             task has finished.
         """
         c = 0  # Just a counter for debugging
@@ -466,7 +466,7 @@ class GenericWorkflowEngine(object):
     def getCallbacks(self, key='*'):
         """Return callbacks for the given workflow.
 
-        :param key: name of the workflow (default: *)
+        :param key: name of the workflow (default: '*')
                 if you want to get all configured workflows
                 pass None object as a key
         :return: list of callbacks

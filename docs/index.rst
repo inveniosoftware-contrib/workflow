@@ -381,25 +381,6 @@ the definition of the pipeline, such as `IF`, `IF_NOT`, `PARALLEL_SPLIT`
 and others.
 
 
-Contribution & Tests
-====================
-
-Bug reports, feature requests, or other contributions are welcome.
-If you find a demonstrable problem that is caused by the code of this
-library please:
-
-1. Search for already reported problem using GitHub issue search.
-2. Check if the issue has been fixed or is still reproducable on the
-   latest `master` branch.
-3. Create an issue with **a test case**.
-
-After your changes, you could run the tests to ensure everything is
-operating correctly.
-
-.. code-block:: console
-
-    $ ./run_tests.sh
-
 API
 ===
 
@@ -407,16 +388,18 @@ This documentation is automatically generated from Workflow's source
 code.
 
 Workflow
---------
+^^^^^^^^
 
 .. automodule:: workflow
    :members:
 
+.. autoclass:: workflow.engine.GenericWorkflowEngine
+   :members:
 
-Indices and tables
-==================
+.. autoclass:: workflow.engine.PhoenixWorkflowEngine
+   :members:
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
+.. include:: ../CONTRIBUTING.rst
+
+.. include:: ../AUTHORS.rst
