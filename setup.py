@@ -51,7 +51,10 @@ with open(os.path.join('workflow', 'version.py'), 'rt') as f:
     ).group('version')
 
 tests_require = [
-    'pytest', 'pytest-cache', 'pytest-cov', 'pytest-pep8',
+    'pytest-cache>=1.0',
+    'pytest-cov>=1.8.0',
+    'pytest-pep8>=1.0.6',
+    'pytest>=2.6.1',
     'coverage'
 ]
 
@@ -87,7 +90,7 @@ setup(
     },
     tests_require=tests_require,
     cmdclass={'test': PyTest},
-    install_requires=['configobj>4.7.0', 'six'] + tests_require,
+    install_requires=['configobj>4.7.0', 'six'],
     long_description="""\
 Simple workflows for Python
 -------------------------------------
