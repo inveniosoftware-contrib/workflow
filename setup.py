@@ -4,7 +4,7 @@
 # Copyright (C) 2011, 2014 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
-# under the terms of the Revised BSD License; see COPYING.txt file for
+# under the terms of the Revised BSD License; see LICENSE file for
 # more details.
 
 """Setup script for workflow package."""
@@ -79,7 +79,6 @@ setup(
         'Environment :: Other Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
-        'License :: OSI Approved :: GNU General Public License (GPL)',
         'Operating System :: OS Independent',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Software Development :: Libraries :: Application Frameworks',
