@@ -28,7 +28,7 @@ so I haven't looked for a better alternative.
 Details
 =======
 
-Wofklow engine is a Finite State Machine with memory
+Workflow engine is a Finite State Machine with memory.
 It is used to execute set of methods in a specified order.
 
 Here is a simple example of a configuration:
@@ -53,7 +53,7 @@ Here is a simple example of a configuration:
 
 You can probably guess what the processing pipeline does with tokens - the
 whole task is made of four steps and the whole configuration is just stored
-as a Python list. Every task is implemeted as a function that takes two objects:
+as a Python list. Every task is implemented as a function that takes two objects:
 
 * currently processed object
 * workflow engine instance
@@ -304,7 +304,7 @@ After the execution of task B, task C, and task D, task E can be executed
         return _synchronize
 
 
-Configuration (ie. what would admins write):
+Configuration (i.e. what would admins write):
 
 .. code-block:: text
 

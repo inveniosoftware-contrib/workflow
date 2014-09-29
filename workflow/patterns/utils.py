@@ -32,7 +32,7 @@ def RUN_WF(workflow, engine=None,
            pass_always=None,
            outkey='RUN_WF',
            reinit=False):
-    """Task for running other workflow - ie. new workflow engine will
+    """Task for running other workflow - i.e. new workflow engine will
     be created and the workflow run. The workflow engine is garbage
     collected together with the function. Therefore you can run the
     function many times and it will reuse the already-loaded WE. In fact
@@ -320,17 +320,17 @@ def DEBUG_CYCLE(stmt, setup=None,
     certain call - you can effectively reload modules and
     hotplug the new code, debug at runtime. The call is
     taking advantage of the internal python timeit module.
-    The parameters are the same as for timeit module - ie.
+    The parameters are the same as for timeit module - i.e.
 
-    :param stmt: string to evaluate (ie. "print sys")
-    :param setup: initialization (ie. "import sys")
+    :param stmt: string to evaluate (i.e. "print sys")
+    :param setup: initialization (i.e. "import sys")
 
     The debug_stopper is a callback that receives (eng, obj)
     *after* execution of the main call. If debug_stopper
     returns True, it means 'stop', don't continue.
 
     :param onerror: string (like the setup) which will
-        be appended to setup in case of error. Ie. if execution
+        be appended to setup in case of error. I.e. if execution
         failed, you can reload the module and try again. This
         gets fired only after an exception!
 

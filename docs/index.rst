@@ -36,8 +36,8 @@ Workflow is on PyPI so all you need is:
 Details
 =======
 
-Wofklow engine is a Finite State Machine with memory It is used to execute
-set of methods in a specified order.
+Workflow engine is a Finite State Machine with memory.  It is used to
+execute set of methods in a specified order.
 
 Here is a simple example of a configuration:
 
@@ -61,7 +61,7 @@ Here is a simple example of a configuration:
 
 You can probably guess what the processing pipeline does with tokens - the
 whole task is made of four steps and the whole configuration is just
-stored as a Python list. Every task is implemeted as a function that takes
+stored as a Python list. Every task is implemented as a function that takes
 two objects:
 
 * currently processed object
@@ -280,7 +280,7 @@ dead simple).
                     the simplest situation comes when you pass a list of callables
                     they will be simply executed in parallel.
                        But if you pass a list of callables (branch of callables)
-                    which is potentionally a new workflow, we will first create a
+                    which is potentially a new workflow, we will first create a
                     workflow engine with the workflows, and execute the branch in it
         @attention: you should never jump out of the synchronized branches
         """
@@ -316,7 +316,7 @@ dead simple).
         return _synchronize
 
 
-Configuration (ie. what would admins write):
+Configuration (i.e. what would admins write):
 
 .. code-block:: python
 
@@ -351,7 +351,7 @@ Here is a simple example of a configuration:
 
 You can probably guess what the processing pipeline does with tokens - the
 whole task is made of four steps and the whole configuration is just stored as
-a Python list. Every task is implemeted as a function that takes two objects:
+a Python list. Every task is implemented as a function that takes two objects:
 
 * currently processed object
 * workflow engine instance

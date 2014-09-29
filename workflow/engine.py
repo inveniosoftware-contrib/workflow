@@ -78,7 +78,7 @@ class WorkflowMissingKey(WorkflowError):
 
 class GenericWorkflowEngine(object):
 
-    """Wofklow engine is a Finite State Machine with memory.
+    """Workflow engine is a Finite State Machine with memory.
 
     It is used to execute set of methods in a specified order.
 

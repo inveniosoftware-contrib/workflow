@@ -407,7 +407,7 @@ class ConfigReader(object):
     def __str__(self):
         """Return textual representation of the current config.
 
-        It can be used for special purposes (ie. to save values
+        It can be used for special purposes (i.e. to save values
         somewhere and reload them -- however, they will be a simple
         dictionaries of textual values; without special powers. This
         class also does not provide ways to load such dumped values,

@@ -7,6 +7,6 @@
 # under the terms of the Revised BSD License; see COPYING.txt file for
 # more details.
 
-"""Wofklow engine is a Finite State Machine with memory."""
+"""Workflow engine is a Finite State Machine with memory."""
 
 from .version import __version__
