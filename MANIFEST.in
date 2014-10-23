@@ -6,7 +6,6 @@
 # more details.
 
 include LICENSE
-include CHANGES.txt
 include docs/*.rst docs/*.py docs/Makefile
 include *.rst
 include tests/*.ini

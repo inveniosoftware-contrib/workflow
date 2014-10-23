@@ -1,45 +1,15 @@
 ==========
-Workflow
+ Workflow
 ==========
 .. currentmodule:: workflow
 
-I was looking for a workflow engine some time ago, and there weren't many for
-Python. Google will show up quite a few, but:
-
-* They are Plone or Django or Project-X specific
-* I found them too complicated (non-intuitive)
-* or abandoned
-* or any combination of the above...
-
-So I created my own workflow engine (alas) - but it sort of works... quite
-well, so I haven't looked for a better alternative.
-
-
-Contents
---------
-
-.. contents::
-   :local:
-   :backlinks: none
-
-
-Installation
-============
-
-Workflow is on PyPI so all you need is:
-
-.. code-block:: console
-
-    $ pip install workflow
-
-
-Details
-=======
+About
+=====
 
 Workflow engine is a Finite State Machine with memory.  It is used to
 execute set of methods in a specified order.
 
-Here is a simple example of a configuration:
+Here is a simple example of a workflow configuration:
 
 .. code-block:: python
 
@@ -59,10 +29,13 @@ Here is a simple example of a configuration:
       translate_token,
     ]
 
-You can probably guess what the processing pipeline does with tokens - the
-whole task is made of four steps and the whole configuration is just
-stored as a Python list. Every task is implemented as a function that takes
-two objects:
+Details
+=======
+
+In the above simple configuration example, you can probably guess what
+the processing pipeline does with tokens - the whole task is made of
+four steps and the whole configuration is just stored as a Python
+list. Every task is implemented as a function that takes two objects:
 
 * currently processed object
 * workflow engine instance
@@ -80,11 +53,11 @@ responsibility of the task to tell the engine what is going to happen
 next; whether to continue, stop, jump back, jump forward and few other
 options.
 
-This is actually a *feature*, I knew that there will be a lot of possible
-exceptions and transition states to implement for NLP processing and I
-also wanted to make the workflow engine simple and fast -- but it has
-disadvantages, you can make more errors and workflow engine will not warn
-you.
+This is actually a *feature*, useful when there are a lot of possible
+exceptions and transition states to implement for NLP processing, as
+well as useful to make the workflow engine simple and fast -- but it
+also has disadvantages, as the workflow engine will not warn in case
+of errors.
 
 The workflow module comes with many patterns that can be directly used in
 the definition of the pipeline, such as IF, IF_NOT, PARALLEL_SPLIT and
@@ -137,7 +110,7 @@ We can then write *workflow definition* like:
     ]
 
 Tasks
------
+=====
 
 Tasks are simple python functions, we can enforce rules (not done yet!) in
 a pythonic way using pydoc conventions, consider this:
@@ -170,17 +143,18 @@ of the individual tasks, and site admins should have a good understanding
 what the task is supposed to do -- the description of the task will be
 displayed through the web GUI.
 
-Some examples
--------------
-
 Here are some examples of workflow patterns (images are from
 http://www.yawlfoundation.org) and their implementation in
-Python. This gives you an idea that workflow engine remains very
-simple and by supplying special functions, we can implement different
+Python. This gives an idea that workflow engine remains very simple
+and by supplying special functions, we can implement different
 patterns.
 
+Example: Parallel split
+-----------------------
 
-.. .. image:: http://www.yawlfoundation.org/images/patterns/basic_ps.jpg
+.. raw:: html
+
+    <img src="http://www.yawlfoundation.org/images/patterns/basic_ps.jpg"/>
 
 This pattern is called Parallel split (as tasks B,C,D are all started in
 parallel after task A). It could be implemented like this:
@@ -231,12 +205,14 @@ And is used like this:
      PARALLEL_SPLIT(task_b,task_c,task_d)
     ]
 
-Arbitrary cycle(s)
-------------------
+Example: Arbitrary cycles
+-------------------------
 
-.. .. image:: http://www.yawlfoundation.org/images/patterns/struc_arb.jpg
+.. raw:: html
 
-This is just for your amusement (and to see how complicated it looks in the
+    <img src="http://www.yawlfoundation.org/images/patterns/struc_arb.jpg"/>
+
+This is just for amusement (and to see how complicated it looks in the
 configuration).
 
 
@@ -262,10 +238,12 @@ configuration).
     Jumping back and forward is obviously dangerous and tedious
     (depending on the actual configuration), we need a better solution.
 
-Synchronization
----------------
+Example: Synchronisation
+------------------------
 
-.. .. image:: http://www.yawlfoundation.org/images/patterns/basic_synch.jpg
+.. raw:: html
+
+    <img src="http://www.yawlfoundation.org/images/patterns/basic_synch.jpg"/>
 
 After the execution of task B, task C, and task D, task E can be executed
 (I will present the threaded version, as the sequential version would be
@@ -327,68 +305,11 @@ Configuration (i.e. what would admins write):
         SYNCHRONIZE(task_b,task_c,task_d, task_a)
     ]
 
-
-Here is a simple example of a configuration:
-
-.. code-block:: python
-
-    [
-        check_token_is_wanted, # (run always)
-        [                      # (run conditionally)
-            check_token_numeric,
-            translate_numeric,
-            next_token          # (stop processing, continue with next token)
-        ],
-        [                      # (run conditionally)
-            check_token_proper_name,
-            translate_proper_name,
-            next_token          # (stop processing, continue with next token)
-        ],
-        normalize_token,       # (only for "normal" tokens)
-        translate_token,
-    ]
-
-
-You can probably guess what the processing pipeline does with tokens - the
-whole task is made of four steps and the whole configuration is just stored as
-a Python list. Every task is implemented as a function that takes two objects:
-
-* currently processed object
-* workflow engine instance
-
-Example:
-
-.. code-block:: python
-
-    def next_token(obj, eng):
-        eng.ContinueNextToken()
-
-
-There are NO explicit states, conditions, transitions - the job of the
-engine is simply to run the tasks one after another. It is the
-responsibility of the task to tell the engine what is going to happen
-next; whether to continue, stop, jump back, jump forward and few other
-options.
-
-This is actually a *feature*, I knew that there will be a lot of possible
-exceptions and transition states to implement for NLP processing and I
-also wanted to make the workflow engine simple and fast -- but it has
-disadvantages, you can make more errors and workflow engine will not warn
-you.
-
-The workflow module comes with many patterns that can be directly used in
-the definition of the pipeline, such as `IF`, `IF_NOT`, `PARALLEL_SPLIT`
-and others.
-
-
 API
 ===
 
 This documentation is automatically generated from Workflow's source
 code.
-
-Workflow
-^^^^^^^^
 
 .. automodule:: workflow
    :members:
@@ -399,7 +320,13 @@ Workflow
 .. autoclass:: workflow.engine.PhoenixWorkflowEngine
    :members:
 
+.. include:: ../CHANGES.rst
 
 .. include:: ../CONTRIBUTING.rst
+
+License
+=======
+
+.. include:: ../LICENSE
 
 .. include:: ../AUTHORS.rst

@@ -90,54 +90,5 @@ setup(
     tests_require=tests_require,
     cmdclass={'test': PyTest},
     install_requires=['configobj>4.7.0', 'six'],
-    long_description="""\
-Simple workflows for Python
--------------------------------------
-
-Workflow engine is a Finite State Machine with memory.
-It is used to execute set of methods in a specified order.
-
-Here is a simple example of a configuration:
-
-    [
-      check_token_is_wanted, # (run always)
-      [                      # (run conditionally)
-         check_token_numeric,
-         translate_numeric,
-         next_token          # (stop processing, continue with next token)
-         ],
-      [                      # (run conditionally)
-         check_token_proper_name,
-         translate_proper_name,
-         next_token          # (stop processing, continue with next token)
-         ],
-      normalize_token,       # (only for "normal" tokens)
-      translate_token,
-    ]
-
-You can probably guess what the processing pipeline does with tokens - the
-whole task is made of four steps and the whole configuration is just stored as
-a Python list. Every task is implemented as a function that takes two objects:
-
-   * currently processed object
-   * workflow engine instance
-
-Example:
-
-def next_token(obj, eng):
-    eng.ContinueNextToken()
-
-There are NO explicit states, conditions, transitions - the job of the engine
-is simply to run the tasks one after another. It is the responsibility of the
-task to tell the engine what is going to happen next; whether to continue,
-stop, jump back, jump forward and few other options.
-
-This is actually a *feature*, I knew that there will be a lot of possible
-exceptions and transition states to implement for NLP processing and I also
-wanted to make the workflow engine simple and fast -- but it has disadvantages,
-you can make more errors and workflow engine will not warn you.
-
-The workflow module comes with many patterns that can be directly used in the
-definition of the pipeline, such as IF, IF_NOT, PARALLEL_SPLIT and others.
-"""
+    long_description=open('README.rst').read(),
 )
