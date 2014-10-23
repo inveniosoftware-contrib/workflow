@@ -64,8 +64,9 @@ setup(
     scripts=['bin/run_workflow.py'],
     version=version,
     description='Simple workflows for Python',
-    author='Roman Chyla',
-    url='https://github.com/romanchyla/workflow',
+    author='Invenio Collaboration',
+    author_email='info@invenio-software.org',
+    url='https://github.com/inveniosoftware/workflow',
     keywords=['workflows', 'finite state machine', 'task execution'],
     classifiers=[
         'Programming Language :: Python',
