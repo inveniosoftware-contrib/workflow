@@ -6,8 +6,9 @@
 # more details.
 
 include LICENSE
+include tox.ini
 include docs/*.rst docs/*.py docs/Makefile
 include *.rst
-include tests/*.ini
+include tests/*.ini tests/*.py
 include .coveragerc .travis.yml pytest.ini
 include *.py *.sh
