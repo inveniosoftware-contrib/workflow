@@ -135,15 +135,12 @@ class DbWorkflowEngine(GenericWorkflowEngine):
         super(DbWorkflowEngine, self).__init__()
 
     @classmethod
-    def with_name(cls, name, curr_obj=0, id_user=0, module_name="Unknown",
+    def with_name(cls, name, id_user=0, module_name="Unknown",
                   **kwargs):
         """ Instantiate a DbWorkflowEngine given a name or UUID.
 
         :param name: name of workflow to run.
         :type name: str
-
-        :param curr_obj: internal id of current object being processed.
-        :type curr_obj: int
 
         :param id_user: id of user to associate with workflow
         :type id_user: int
@@ -151,11 +148,9 @@ class DbWorkflowEngine(GenericWorkflowEngine):
         :param module_name: label used to query groups of workflows.
         :type module_name: str
         """
-        # FIXME: current_object is unused (?)
         db_obj = Workflow(
             name=name,
             id_user=id_user,
-            current_object=curr_obj,
             module_name=module_name,
             uuid=new_uuid()
         )
