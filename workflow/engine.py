@@ -272,12 +272,6 @@ class GenericWorkflowEngine(object):
 
         wfe = pickle.loads(s)
         wfe.setWorkflow(workflow)
-
-    It is also not possible to serialize WFE when custom factory
-    tasks were provided. If you attempt to serialize such a WFE instance,
-    it will raise exception. If you want to serialize
-    WFE including its factory hooks and workflow callbacks, use the
-    ``PhoenixWorkflowEngine`` class instead.
     """
 
     def __init__(self):
@@ -311,28 +305,6 @@ class GenericWorkflowEngine(object):
     def init_logger(self):
         """Return the appropriate logger instance."""
         return logging.getLogger("workflow.%s" % self.__class__)
-
-    def __getstate__(self):
-        """Return state of the instance."""
-        if not self._picklable_safe:
-            raise pickle.PickleError(
-                "The instance of the workflow engine cannot be serialized, "
-                "because it was constructed with custom, user-supplied "
-                "callbacks. Either use PickableWorkflowEngine or provide "
-                "your own __getstate__ method.")
-        return {'_store': self._store, '_objects': self._objects,
-                'ms': tuple(self.state), '_callbacks': {}, 'log': self.log}
-
-    def __setstate__(self, state):
-        """Set state of the instance."""
-        self._store = state['_store']
-        self._objects = state['_objects']
-        self.state = MachineState(*state['ms'])
-        self._callbacks = state['_callbacks']
-        self.log = state['log']
-        if len(self._objects) < self.state.elem_ptr:
-            raise pickle.PickleError(
-                "The workflow instance inconsistent state, too few objects")
 
     def setLogger(self, logger):
         """Set logger used by workflow engine.
@@ -838,63 +810,6 @@ class GenericWorkflowEngine(object):
         # """Delete parameter from the internal storage."""
         if key in self.extra_data:
             del self.extra_data[key]
-
-class PhoenixWorkflowEngine(GenericWorkflowEngine):
-
-    """Implementation of serializable workflow engine.
-
-    Engine is able to be *serialized* and re-executed also with its workflow
-    tasks - without knowing their original definition. This implementation
-    depends on the picloud module - http://www.picloud.com/. The module must be
-    installed in the standard location.
-    """
-
-    def __init__(self, *args, **kwargs):
-        """Initialize serialialization engine."""
-        super(PhoenixWorkflowEngine, self).__init__(*args, **kwargs)
-        from cloud import serialization
-        self._picloud_serializer = serialization
-
-    def __getstate__(self):
-        """Return Pickable instance state."""
-        out = super(PhoenixWorkflowEngine, self).__getstate__()
-        cbs = self.getCallbacks(key=None)
-        out['_callbacks'] = self._picloud_serializer.serialize(
-            cbs, needsPyCloudSerializer=True)
-        factory_calls = {}
-        for name in ('processing_factory', 'callback_chooser',
-                     'before_processing', 'after_processing'):
-            c = getattr(self, name)
-            if c.__class__ != 'PhoenixWorkflowEngine':
-                factory_calls[name] = c
-        out['factory_calls'] = self._picloud_serializer.serialize(
-            factory_calls, needsPyCloudSerializer=True)
-        return out
-
-    def __setstate__(self, state):
-        """Set the state."""
-        from cloud import serialization
-        self._picloud_serializer = serialization
-
-        state['_callbacks'] = self._picloud_serializer.deserialize(
-            state['_callbacks'])
-        super(PhoenixWorkflowEngine, self).__setstate__(state)
-        factory_calls = self._picloud_serializer.deserialize(
-            state['factory_calls'])
-        for k, v in factory_calls.items():
-            setattr(self, k, v)
-
-    # Deprecated
-    def jumpToken(self, offset):
-        return self.jump_token(offset)
-
-    # Deprecated
-    def jumpCall(self, offset):
-        return self.jump_call(offset)
-
-    # Deprecated
-    def setLogger(self, logger):
-        self.log = logger
 
 
 class ActionMapper(object):

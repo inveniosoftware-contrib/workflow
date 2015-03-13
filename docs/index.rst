@@ -317,9 +317,6 @@ code.
 .. autoclass:: workflow.engine.GenericWorkflowEngine
    :members:
 
-.. autoclass:: workflow.engine.PhoenixWorkflowEngine
-   :members:
-
 .. include:: ../CHANGES.rst
 
 .. include:: ../CONTRIBUTING.rst
