@@ -120,9 +120,6 @@ class MachineState(object):
             raise AttributeError("elem_ptr may not be < -1")
         super(MachineState, self).__setattr__(name, value)
 
-    def __iter__(self):
-        return iter((self.elem_ptr, self.task_pos))
-
     def reset(self):
         """Reset the state of the machine."""
         self.elem_ptr_reset()
@@ -306,18 +303,7 @@ class GenericWorkflowEngine(object):
         """Return the appropriate logger instance."""
         return logging.getLogger("workflow.%s" % self.__class__)
 
-    def setLogger(self, logger):
-        """Set logger used by workflow engine.
-
-        .. note:: The logger instance must be pickable if the serialization
-            should work.
-        """
-        self.log = logger
-
-
-    #############################################################################
-    #                                                                           #
-    def continueNextToken(self):
+    def continue_next_token(self):
         """Continue with the next token."""
         raise ContinueNextToken
 
