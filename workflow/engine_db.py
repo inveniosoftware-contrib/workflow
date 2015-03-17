@@ -217,33 +217,6 @@ class DbWorkflowEngine(GenericWorkflowEngine):
     #                                                                          #
     ############################################################################
 
-    def __getstate__(self):
-        """Pickling needed functions."""
-        if not self._picklable_safe:
-            raise cPickle.PickleError("The instance of the workflow engine "
-                                      "cannot be serialized, "
-                                      "because it was constructed with "
-                                      "custom, user-supplied callbacks. "
-                                      "Either use PickableWorkflowEngine or "
-                                      "provide your own __getstate__ method.")
-        state = self.__dict__.copy()
-        del state['log']
-        return state
-
-    def __setstate__(self, state):
-        """Unpickling needed functions."""
-        if len(self._objects) < self._i[0]:
-            raise cPickle.PickleError("The workflow instance "
-                                      "inconsistent state, "
-                                      "too few objects")
-
-        db_handler_obj = DbWorkflowLogHandler(DbWorkflowEngineLog, "uuid")
-        state['log'] = get_logger(logger_name="workflow.%s" % state['uuid'],
-                                  db_handler_obj=db_handler_obj,
-                                  obj=self)
-
-        self.__dict__ = state
-
     def __repr__(self):
         """Allow to represent the DbWorkflowEngine."""
         return "<DbWorkflow_engine(%s)>" % (self.name,)
