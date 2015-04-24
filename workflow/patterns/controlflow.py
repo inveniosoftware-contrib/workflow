@@ -7,16 +7,21 @@
 # under the terms of the Revised BSD License; see LICENSE file for
 # more details.
 
+from functools import wraps, partial
 import threading
 import time
+import collections
 import copy
 
+from functools import partial
 from six.moves import _thread as thread, queue
+from six import string_types
 
 MAX_TIMEOUT = 30000
 
 
 from workflow.engine import GenericWorkflowEngine as engine
+from workflow.engine import Callbacks
 
 # ----------------------- helper calls -------------------------------- #
 
@@ -80,6 +85,14 @@ def STOP():
     def x(obj, eng):
         eng.stopProcessing()
     x.__name__ = 'STOP'
+    return x
+
+
+def HALT():
+    """Unconditional stop of the workflow execution."""
+    def x(obj, eng):
+        eng.haltProcessing()
+    x.__name__ = 'HALT'
     return x
 
 
@@ -177,13 +190,143 @@ def WHILE(cond, branch):
     if callable(branch):
         branch = (branch,)
     # we don't know what is hiding inside branch
-    branch = tuple(engine._cleanUpCallables(branch))
+    branch = tuple(Callbacks._cleanUpCallables(branch))
 
     def x(obj, eng):
         if not cond(obj, eng):
             eng.breakFromThisLoop()
     x.__name__ = 'WHILE'
     return [x, branch, TASK_JUMP_BWD(-(len(branch) + 1))]
+
+
+def CMP(a, b, op):
+    """Task that can be used in if or something else to compare two values.
+
+    :param a: left-hand-side value
+    :param b: right-hand-side value
+    :param op: Operator can be :
+        eq , gt , gte , lt , lte
+        == , >  , >=  , <  , <=
+    :return: bool: result of the test
+    """
+    @wraps(CMP)
+    def _CMP(obj, eng):
+        a_ = a
+        b_ = b
+        while callable(a_):
+            a_ = a_(obj, eng)
+        while callable(b_):
+            b_ = b_(obj, eng)
+        return {
+            "eq": lambda a_, b_: a_ == b_,
+            "gt": lambda a_, b_: a_ > b_,
+            "gte": lambda a_, b_: a_ >= b_,
+            "lt": lambda a_, b_: a_ < b_,
+            "lte": lambda a_, b_: a_ <= b_,
+
+            "==": lambda a_, b_: a_ == b_,
+            ">": lambda a_, b_: a_ > b_,
+            ">=": lambda a_, b_: a_ >= b_,
+            "<": lambda a_, b_: a_ < b_,
+            "<=": lambda a_, b_: a_ <= b_,
+        }[op](a_, b_)
+    _CMP.hide = True
+    return _CMP
+
+def _setter(key, obj, eng, step, val):
+    eng.extra_data[key] = val
+
+
+def FOR(get_list_function, setter, branch, cache_data=False, order="ASC"):
+    """For loop that stores the current item.
+    :param get_list_function: function returning the list on which we should
+    iterate.
+    :param branch: block of functions to run
+    :param savename: name of variable to save the current loop state in the
+    extra_data in case you want to reuse the value somewhere in a task.
+    :param cache_data: can be True or False in case of True, the list will be
+    cached in memory instead of being recomputed everytime. In case of caching
+    the list is no more dynamic.
+    :param order: because we should iterate over a list you can choose in which
+    order you want to iterate over your list from start to end(ASC) or from end
+    to start (DSC).
+    :param setter: function to call in order to save the current item of the
+    list that is being iterated over. expected to take arguments (obj, eng, val)
+    :param getter: function to call in order to retrieve the current item of the
+    list that is being iterated over. expected to take arguments(obj, eng)
+    """
+    # be sane
+    assert order in ('ASC', 'DSC')
+    # sanitize string better
+    if isinstance(setter, string_types):
+        setter = partial(_setter, setter)
+    # quite often i passed a function, which results in errors
+    if callable(branch):
+        branch = (branch,)
+    # we don't know what is hiding inside branch
+    branch = tuple(Callbacks._cleanUpCallables(branch))
+    def _for(obj, eng):
+        step = str(eng.getCurrTaskId())  # eg '[1]'
+        if "_Iterators" not in eng.extra_data:
+            eng.extra_data["_Iterators"] = {}
+
+        def get_list():
+            try:
+                return eng.extra_data["_Iterators"][step]["cache"]
+            except KeyError:
+                if callable(get_list_function):
+                    return get_list()
+                elif isinstance(get_list_function, collections.Iterable):
+                    return list(get_list_function)
+                else:
+                    raise TypeError("get_list_function is not a callable nor a "
+                                    "iterable")
+
+        my_list_to_process = get_list()
+
+        # First time we are in this step
+        if step not in eng.extra_data["_Iterators"]:
+            eng.extra_data["_Iterators"][step] = {}
+            # Cache list
+            if cache_data:
+                eng.extra_data["_Iterators"][step]["cache"] = get_list()
+            # Initialize step value
+            eng.extra_data["_Iterators"][step]["value"] = {
+                "ASC": 0,
+                "DSC": len(my_list_to_process) - 1}[order]
+            # Store previous data
+            try:
+                eng.extra_data["_Iterators"][step]["previous_data"] = \
+                    eng.extra_data["_Iterators"][step]["current_data"]
+            except KeyError:
+                pass
+
+        # Increment or decrement step value
+        currently_within_list_bounds = \
+            (order == "ASC" and eng.extra_data["_Iterators"][step]["value"] < len(my_list_to_process)) or \
+            (order == "DSC" and eng.extra_data["_Iterators"][step]["value"] > -1)
+        if currently_within_list_bounds:
+            # Store current data for ourselves
+            eng.extra_data["_Iterators"][step]["current_data"] = \
+                my_list_to_process[eng.extra_data["_Iterators"][step]["value"]]
+            # Store for the user
+            if setter:
+                setter(obj, eng, step, my_list_to_process[eng.extra_data["_Iterators"][step]["value"]])
+            if order == 'ASC':
+                eng.extra_data["_Iterators"][step]["value"] += 1
+            elif order == 'DSC':
+                eng.extra_data["_Iterators"][step]["value"] -= 1
+        else:
+            try:
+                setter(obj, eng, step, eng.extra_data["_Iterators"][step]["previous_data"])
+            except KeyError:
+                pass
+            del eng.extra_data["_Iterators"][step]
+            eng.breakFromThisLoop()
+
+    _for.__name__ = 'FOR'
+    return [_for, branch, TASK_JUMP_BWD(-(len(branch) + 1))]
+
 
 # ---------------- basic control flow patterns ------------------------------ #
 # ---- http://www.yawlfoundation.org/pages/resources/patterns.html#basic ---- #
@@ -321,6 +464,7 @@ def SIMPLE_MERGE(*args):
 
     workflow.append(final_task)
     return workflow
+
 
 
 # ------------------------------------------------------------- #
