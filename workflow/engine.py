@@ -7,21 +7,18 @@
 # under the terms of the Revised BSD License; see LICENSE file for
 # more details.
 
-"""Define workflow engines and exceptions.""" 
+"""Define workflow engines and exceptions."""
 # we are not using the newseman logging to make this library independent
 import logging
 import sys
-import os
-
-import logging
-import pickle
-from six import reraise, string_types
 from collections import (
     Iterable,
     Callable,
 )
-from .utils import staticproperty
 
+from six import reraise, string_types
+
+from .deprecation import deprecated
 from .errors import (
     BreakFromThisLoop,
     ContinueNextToken,
@@ -98,7 +95,7 @@ class MachineState(object):
 
         :task_pos:
 
-        `Reserved for the array that points to the task position.
+        Reserved for the array that points to the task position.
         The number there points to the task that is currently executed; when
         error happens, it will be there unchanged. The pointer is updated after
         the task finished running.
@@ -303,15 +300,18 @@ class GenericWorkflowEngine(object):
         """Return the appropriate logger instance."""
         return logging.getLogger("workflow.%s" % self.__class__)
 
+
+    #############################################################################
+    #                                                                           #
     def continue_next_token(self):
         """Continue with the next token."""
         raise ContinueNextToken
 
-    def stopProcessing(self):
+    def stop(self):
         """Break out, stop everything (in the current `wfe`)."""
         raise StopProcessing
 
-    def haltProcessing(self, msg="", action=None, **payload):
+    def halt(self, msg="", action=None, **payload):
         """Halt the workflow (stop also any parent `wfe`).
 
         Halts the currently running workflow by raising HaltProcessing.
@@ -327,6 +327,7 @@ class GenericWorkflowEngine(object):
 
         :raises: HaltProcessing
         """
+        # FIXME: action is not used anywhere
         raise HaltProcessing(msg, action, **payload)
 
     def break_current_loop(self):
@@ -338,7 +339,7 @@ class GenericWorkflowEngine(object):
     #############################################################################
 
     @staticmethod
-    def jumpToken(offset):
+    def jump_token(offset):
         """Jump to `offset` tokens away."""
         raise JumpToken(offset)
 
@@ -351,6 +352,16 @@ class GenericWorkflowEngine(object):
         if DEBUG:
             self.log.debug('We skip [%s] calls' % offset)
         raise JumpCall(offset)
+
+    @staticmethod
+    def abort():
+        """Abort current workflow execution without saving object."""
+        raise AbortProcessing
+
+    @staticmethod
+    def skip_token():
+        """Skip current workflow object without saving it."""
+        raise SkipToken
 
     def _pre_flight_checks(self, objects):
         """Ensure we are not out of oil."""
@@ -415,7 +426,9 @@ class GenericWorkflowEngine(object):
             attributes of the engine.
         """
         if hasattr(obj, 'getFeature'):
-            # Deprecated
+            import warnings
+            warnings.warn('Support for `getFeature` will be removed in a future'
+                           'release.', DeprecationWarning)
             t = obj.getFeature('type')
             if t:
                 return self.callbacks.get(t)
@@ -656,17 +669,31 @@ class GenericWorkflowEngine(object):
         return len(self._objects) - 1 == self.state.elem_ptr and \
             self.state.current_object_processed
 
-    # Deprecated
+    @staticmethod
+    @deprecated('`abortProcessing` has been replaced with `abort` and will be '
+                'removed in a future release.')
+    def abortProcessing():
+        """Abort current workflow execution without saving object."""
+        raise AbortProcessing
+
+    @staticmethod
+    @deprecated('`skipToken` has been replaced with `skip_token`')
+    def skipToken():
+        """Skip current workflow object without saving it."""
+        raise SkipToken
+
     @property
+    @deprecated('`store` has been replaced with `extra_data`')
     def store(self):
         return self.extra_data
 
-    # Deprecated
+    @deprecated('`setWorkflow` has been replaced with `callbacks.replace`')
     def setWorkflow(self, list_or_tuple):
         return self.callbacks.replace(list_or_tuple)
 
-    # Deprecated
-    def setPosition(self, elem_ptr, task_pos):
+    @deprecated('`setPosition` has been with setting `state.token_pos` and '
+                '`state.callback_pos` separately')
+    def setPosition(self, token_pos, callback_pos):
         # """Set the internal pointers (of current state/obj).
 
         # :param elem_ptr: (int) index of the currently processed object
@@ -679,7 +706,7 @@ class GenericWorkflowEngine(object):
         self.state.elem_ptr = elem_ptr
         self.state.task_pos = task_pos
 
-    # Deprecated
+    @deprecated('`getCallbacks` has been replaced with `callbacks.get`')
     def getCallbacks(self, key='*'):
         # """Return callbacks for the given workflow.
 
@@ -690,38 +717,38 @@ class GenericWorkflowEngine(object):
         # """
         return self.callbacks.get(key=key)
 
-    # Deprecated
+    @deprecated('`addCallback` has been replaced with `callbacks.add`')
     def addCallback(self, key, func, before=None, after=None,
                     relative_weight=None):
         # """Insert one callable to the stack of the callables."""
         return self.callbacks.add(func, key)
 
-    # Deprecated
+    @deprecated('`addManyCallbacks` has been replaced with `callbacks.add_many`')
     def addManyCallbacks(self, key, list_or_tuple):
         # """Insert many callable to the stack of thec callables."""
         return self.callbacks.add_many(list_or_tuple, key)
 
-    # Deprecated
+    @deprecated('`removeAllCallbacks` has been replaced with `callbacks.clear_all`')
     def removeAllCallbacks(self):
         # """Remove all the tasks from the workflow engine instance."""
         self.callbacks.clear_all()
 
-    # Deprecated
+    @deprecated('`removeCallbacks` has been replaced with `callbacks.clear`')
     def removeCallbacks(self, key):
         # """Remove callbacks for the given `key`."""
         self.callbacks.clear(key)
 
-    # Deprecated
+    @deprecated('`removeCallbacks` has been replaced with `callbacks.clear`')
     def replaceCallbacks(self, key, funcs):
         # """Replace processing workflow with a new workflow."""
         self.callbacks.replace(key, funcs)
 
-    # Deprecated
+    @deprecated('`getCurrObjId` has been replaced with `state.token_pos`')
     def getCurrObjId(self):
         # """Return id of the currently processed object."""
         return self.state.elem_ptr
 
-    # Deprecated
+    @deprecated('`getCurrTaskId` has been replaced with `state.callback_pos`')
     def getCurrTaskId(self):
         # """Return id of the currently processed task.
 
@@ -729,7 +756,9 @@ class GenericWorkflowEngine(object):
         # """
         return self.state.task_pos
 
-    # Deprecated
+    @deprecated('`duplicate` has been deprecated in favour of the new '
+                'architecture. Please read the new documentation on extending '
+                'workflow')
     def duplicate(self):
         # """Duplicate workflow engine based on existing instance.
 
@@ -738,24 +767,26 @@ class GenericWorkflowEngine(object):
         # """
         return self.__class__()
 
-    # Deprecated
+    @deprecated('`jumpTokenForward` has been replaced with `jump_token`')
     def jumpTokenForward(self, offset):
         # """Jump to `x` th token."""
         raise JumpTokenForward(offset)
 
-    # Deprecated
+    @deprecated('`jumpTokenForward` has been replaced with `jump_token`, used '
+                'with a negative offset')
     def jumpTokenBack(self, offset):
         # """Return `x` tokens back - be careful with circular loops."""
         raise JumpTokenBack(offset)
 
-    # Deprecated
+    @deprecated('`jumpCallForward` has been replaced with `jump_call`')
     def jumpCallForward(self, offset):
         # """Jump to `x` th call in this loop."""
         if offset < 0:
             raise WorkflowError("JumpCallForward cannot be negative number")
         raise JumpCall(offset)
 
-    # Deprecated
+    @deprecated('`jumpCallBack` has been replaced with `jump_call`, used '
+                'with a negative offset')
     def jumpCallBack(self, offset):
         # """Return `x` calls back in the current loop.
 
@@ -765,13 +796,12 @@ class GenericWorkflowEngine(object):
             raise WorkflowError("JumpCallBack cannot be positive number")
         raise JumpCall(offset)
 
-
-    # Deprecated
+    @deprecated('`setVar` has been replaced with the `extra_data` dictionary')
     def setVar(self, key, what):
         # """Store the obj in the internal stack."""
         self.extra_data[key] = what
 
-    # Deprecated
+    @deprecated('`getVar` has been replaced with the `extra_data` dictionary')
     def getVar(self, key, default=None):
         # """Return named `obj` from internal stack. If not found, return `None`.
         # :param key: name of the object to return
@@ -786,16 +816,40 @@ class GenericWorkflowEngine(object):
                 self.setVar(key, default)
                 return default
 
-    # Deprecated
+    @deprecated('`getVar` has been replaced with the `extra_data` dictionary')
     def hasVar(self, key):
         # """Return True if parameter of this name is stored."""
         return key in self.extra_data
 
-    # Deprecated
+    @deprecated('`getVar` has been replaced with the `extra_data` dictionary')
     def delVar(self, key):
         # """Delete parameter from the internal storage."""
         if key in self.extra_data:
             del self.extra_data[key]
+
+    @deprecated('`haltProcessing` has been replaced with `halt`')
+    def haltProcessing(self, msg="", action=None, payload=None):
+        return self.halt(msg=msg, action=action, payload=payload)
+
+    @deprecated('`continueNextToken` has been replaced with `continue_next_token`')
+    def continueNextToken(self):
+        self.continue_next_token()
+
+    @deprecated('`continueNextToken` has been replaced with `stop`')
+    def stopProcessing(self):
+        return self.stop()
+
+    @deprecated('`continueNextToken` has been replaced with `break_current_loop`')
+    def breakFromThisLoop(self):
+        return self.break_current_loop()
+
+    @deprecated('`jumpToken` has been replaced with `jump_token`')
+    def jumpToken(self, offset):
+        return self.jump_token(offset)
+
+    @deprecated('`jumpCall` has been replaced with `jump_call`')
+    def jumpCall(self, offset):
+        return self.jump_call(offset)
 
 
 class ActionMapper(object):
@@ -895,8 +949,8 @@ class TransitionActions(object):
         obj.log.debug(msg)
         raise Break
 
-    # Deprecated
     @staticmethod
+    @deprecated('`JumpTokenForward` has been replaced with `JumpToken`')
     def JumpTokenForward(obj, eng, callbacks, step):
         """Action to take when JumpTokenForward is raised."""
         if step.args[0] < 0:
@@ -905,8 +959,9 @@ class TransitionActions(object):
             eng.log.debug('We skip [%s] objects' % step.args[0])
         TransitionActions.JumpToken(obj, eng, callbacks, step)
 
-    # Deprecated
     @staticmethod
+    @deprecated('`JumpTokenBack` has been replaced with `JumpToken` and a '
+                'negative step')
     def JumpTokenBack(obj, eng, callbacks, step):
         """Action to take when JumpTokenBack is raised."""
         if step.args[0] > 0:

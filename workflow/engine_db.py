@@ -9,10 +9,7 @@
 
 
 """The workflow engine extension of GenericWorkflowEngine."""
-
 from __future__ import absolute_import
-
-import sys
 
 import traceback
 from collections import OrderedDict
