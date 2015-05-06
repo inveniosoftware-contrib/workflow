@@ -9,13 +9,18 @@
 
 from __future__ import print_function
 
-import inspect
-import traceback
-import six
 import sys
+
+import inspect
 import pstats
+import six
 import timeit
+import traceback
+from functools import wraps
+
 from workflow.errors import WorkflowTransition
+
+
 try:
     import cProfile
 except ImportError:
@@ -109,27 +114,27 @@ def EMPTY_CALL(obj, eng):
 
 
 def ENG_GET(something):
-    """this is the same as lambda obj, eng: eng.store.get(something)
+    """this is the same as lambda obj, eng: eng.extra_data.get(something)
     :param something: str, key of the object to retrieve
     :return: value of the key from eng object
     """
+    @wraps(ENG_GET)
     def x(obj, eng):
-        return eng.setdefault[something]
-    x.__name__ = 'ENG_GET'
+        return eng.extra_data.setdefault(something, None)
     return x
 
 
 def ENG_SET(key, value):
-    """this is the same as lambda obj, eng: eng.store.update({'key': value})
+    """this is the same as lambda obj, eng: eng.extra_data.update({'key': value})
     :param key: str, key of the object to retrieve
     :param value: anything
     @attention: this call is executed when the workflow is created
         therefore, the key and value must exist at the time
         (obj and eng don't exist yet)
     """
+    @wraps(ENG_SET)
     def _eng_set(obj, eng):
-        eng.store[key] = value
-    _eng_set.__name__ = 'ENG_SET'
+        eng.extra_data[key] = value
     return _eng_set
 
 
@@ -141,6 +146,7 @@ def OBJ_GET(something, cond='all'):
         keys, then a list is returned. Watch for empty and None returns!
 
     """
+    @wraps(OBJ_GET)
     def x(obj, eng):
         if isinstance(something, six.string_types):
             return something in obj and obj[something]
@@ -176,6 +182,7 @@ def OBJ_SET(key, value):
         therefore, the key and value must exist at the time
         (obj and eng don't exist yet)
     """
+    @wraps(OBJ_SET)
     def x(obj, eng):
         obj[key] = value
     x.__name__ = 'OBJ_SET'
@@ -192,6 +199,7 @@ def ERROR(msg='Error in the workflow'):
     else:
         caller = ''
 
+    @wraps(ERROR)
     def x(obj, eng):
         raise Exception('in %s : %s' % (caller, msg))
     x.__name__ = 'ERROR'
@@ -209,6 +217,7 @@ def TRY(onecall, retry=1, onfailure=Exception, verbose=True):
     if not callable(onecall):
         raise Exception('You can wrap only one callable with TRY')
 
+    @wraps(TRY)
     def x(obj, eng):
         tries = 1 + retry
         i = 0
@@ -252,6 +261,7 @@ def PROFILE(call, output=None,
           @see pstats module for explanation
     """
 
+    @wraps(PROFILE)
     def x(obj, eng):
         if isinstance(call, list) or isinstance(call, tuple):
             new_eng = eng.duplicate()
@@ -345,6 +355,7 @@ def DEBUG_CYCLE(stmt, setup=None,
     if kwargs:
         to_pass.update(kwargs)
 
+    @wraps(DEBUG_CYCLE)
     def x(obj, eng):
 
         storage = [0, debug_stopper, True]  # counter, callback, flag
@@ -417,7 +428,7 @@ def CALLFUNC(func, outkey=None, debug=False, stopper=None,
         string (fully qualified function name) or the callable
         itself
     :param outkey: results of the call will be stored inside
-        eng.store[outkey] if outkey != None
+        eng.extra_data[outkey] if outkey != None
     :param debug: boolean, if True, we will run the call in a
         loop, reloading the module after each error
     :param stopper: a callable which will receive obj, eng
@@ -432,7 +443,7 @@ def CALLFUNC(func, outkey=None, debug=False, stopper=None,
     :param oeargs: definition of arguments that should be put
         inside the *args; you can use syntactic sugar to instruct
         system where to take the value, for example Eseman - will
-        take eng.store['seman'] -- 'O' [capital letter Oooo] means
+        take eng.extra_data['seman'] -- 'O' [capital letter Oooo] means
         take the value from obj
     :param **kwargs: other kwargs passed on to the function
     :return: nothing, value is stored inside obj[outkey]
@@ -440,19 +451,20 @@ def CALLFUNC(func, outkey=None, debug=False, stopper=None,
     mod, new_func = _get_mod_func(func)
     args = list(args)
 
+    @wraps(CALLFUNC)
     def x(obj, eng):
         try:
             for key in oeargs:
                 first_key, rest_key = key[0], key[1:]
                 if first_key == 'O':
                     args.append(obj[rest_key])
-                elif first_key == 'E' and rest_key in eng.store:
-                    args.append(eng.store.setdefault(rest_key))
+                elif first_key == 'E' and rest_key in eng.extra_data:
+                    args.append(eng.extra_data.setdefault(rest_key))
                 else:
                     if key in obj:
                         args.append(obj[key])
-                    elif key in eng.store:
-                        args.append(eng.store.setdefault(key))
+                    elif key in eng.extra_data:
+                        args.append(eng.extra_data.setdefault(key))
                     else:
                         raise Exception(
                             "%s is not inside obj nor eng, try specifying "
@@ -465,7 +477,7 @@ def CALLFUNC(func, outkey=None, debug=False, stopper=None,
             sys.exit(1)
 
         for k, v in ekeys.items():
-            kwargs[k] = eng.store[v]
+            kwargs[k] = eng.extra_data[v]
         for k, v in okeys.items():
             kwargs[k] = obj[v]
 
