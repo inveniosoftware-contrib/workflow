@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2011, 2014 CERN.
+# Copyright (C) 2011, 2014, 2015 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
@@ -186,7 +186,7 @@ def WHILE(cond, branch):
     return [x, branch, TASK_JUMP_BWD(-(len(branch) + 1))]
 
 # ---------------- basic control flow patterns ------------------------------ #
-# ------ http://www.yawlfoundation.org/resources/patterns.html#basic -------- #
+# ---- http://www.yawlfoundation.org/pages/resources/patterns.html#basic ---- #
 
 
 def PARALLEL_SPLIT(*args):
@@ -210,11 +210,10 @@ def PARALLEL_SPLIT(*args):
     """
     def _parallel_split(obj, eng, calls):
         lock = thread.allocate_lock()
-        i = 0
-        eng.setVar('lock', lock)
+        eng.store['lock'] = lock
         for func in calls:
             new_eng = eng.duplicate()
-            new_eng.setWorkflow([lambda o, e: e.setVar('lock', lock), func])
+            new_eng.setWorkflow([lambda o, e: e.store.update({'lock': lock}), func])
             thread.start_new_thread(new_eng.process, ([obj], ))
             # new_eng.process([obj])
     return lambda o, e: _parallel_split(o, e, args)

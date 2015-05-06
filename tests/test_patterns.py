@@ -35,24 +35,21 @@ def a(key):
 
 def e(key, val):
     def _e(obj, eng):
-        eng.setVar(key, val)
+        eng.store[key] = val
     return _e
 
 
 def printer(val):
     def _printer(obj, eng):
-        lock = eng.getVar('lock')
-        end = time.time() + .2
+        lock = eng.store['lock']
         w = float(random.randint(1, 5)) / 100
-        i = 0
-        while i < 5:
+        for _ in range(5):
             try:
                 lock.acquire()
                 obj.append(val)
             finally:
                 lock.release()
             time.sleep(w)
-            i += 1
     return _printer
 
 

@@ -109,18 +109,18 @@ def EMPTY_CALL(obj, eng):
 
 
 def ENG_GET(something):
-    """this is the same as lambda obj, eng: eng.getVar('something')
+    """this is the same as lambda obj, eng: eng.store.get(something)
     :param something: str, key of the object to retrieve
     :return: value of the key from eng object
     """
     def x(obj, eng):
-        return eng.getVar(something)
+        return eng.setdefault[something]
     x.__name__ = 'ENG_GET'
     return x
 
 
 def ENG_SET(key, value):
-    """this is the same as lambda obj, eng: eng.setVar('key', value)
+    """this is the same as lambda obj, eng: eng.store.update({'key': value})
     :param key: str, key of the object to retrieve
     :param value: anything
     @attention: this call is executed when the workflow is created
@@ -128,7 +128,7 @@ def ENG_SET(key, value):
         (obj and eng don't exist yet)
     """
     def _eng_set(obj, eng):
-        return eng.setVar(key, value)
+        eng.store[key] = value
     _eng_set.__name__ = 'ENG_SET'
     return _eng_set
 
@@ -417,7 +417,7 @@ def CALLFUNC(func, outkey=None, debug=False, stopper=None,
         string (fully qualified function name) or the callable
         itself
     :param outkey: results of the call will be stored inside
-        eng.setVar(outkey) if outkey != None
+        eng.store[outkey] if outkey != None
     :param debug: boolean, if True, we will run the call in a
         loop, reloading the module after each error
     :param stopper: a callable which will receive obj, eng
@@ -432,7 +432,7 @@ def CALLFUNC(func, outkey=None, debug=False, stopper=None,
     :param oeargs: definition of arguments that should be put
         inside the *args; you can use syntactic sugar to instruct
         system where to take the value, for example Eseman - will
-        take eng.getVar('seman') -- 'O' [capital letter Oooo] means
+        take eng.store['seman'] -- 'O' [capital letter Oooo] means
         take the value from obj
     :param **kwargs: other kwargs passed on to the function
     :return: nothing, value is stored inside obj[outkey]
@@ -446,13 +446,13 @@ def CALLFUNC(func, outkey=None, debug=False, stopper=None,
                 first_key, rest_key = key[0], key[1:]
                 if first_key == 'O':
                     args.append(obj[rest_key])
-                elif first_key == 'E' and eng.hasVar(rest_key):
-                    args.append(eng.getVar(rest_key))
+                elif first_key == 'E' and rest_key in eng.store:
+                    args.append(eng.store.setdefault(rest_key))
                 else:
                     if key in obj:
                         args.append(obj[key])
-                    elif eng.hasVar(key):
-                        args.append(eng.getVar(key))
+                    elif key in eng.store:
+                        args.append(eng.store.setdefault(key))
                     else:
                         raise Exception(
                             "%s is not inside obj nor eng, try specifying "
@@ -465,7 +465,7 @@ def CALLFUNC(func, outkey=None, debug=False, stopper=None,
             sys.exit(1)
 
         for k, v in ekeys.items():
-            kwargs[k] = eng.getVar(v)
+            kwargs[k] = eng.store[v]
         for k, v in okeys.items():
             kwargs[k] = obj[v]
 
