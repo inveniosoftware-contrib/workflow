@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2014 CERN.
+# Copyright (C) 2014, 2015 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
 # more details.
 
-import unittest
 import sys
 import os
 import time
@@ -57,14 +56,14 @@ def printer(val):
     return _printer
 
 
-class TestGenericWorkflowEngine(unittest.TestCase):
+class TestGenericWorkflowEngine(object):
 
     """Tests of the WE interface"""
 
-    def setUp(self):
+    def setup_method(self, method):
         self.key = '*'
 
-    def tearDown(self):
+    def teardown_method(self, method):
         pass
 
     def getDoc(self, val=None):
@@ -198,22 +197,34 @@ class TestGenericWorkflowEngine(unittest.TestCase):
 
         we.setWorkflow([i('start'),
                         cf.PARALLEL_SPLIT(
-            [cf.PARALLEL_SPLIT(
-                printer('p0'),
-                printer('p0a'),
-                cf.PARALLEL_SPLIT(printer('p0b'), printer('p0c')),
-            ), printer('xx')],
-            [a('AAA'), printer('p2b')],
-            printer('p3'),
-            [a('p4a'), printer('p4b'),
-             printer('p4c')],
-            [printer('p5'), cf.PARALLEL_SPLIT(
-                printer('p6'),
-                printer('p7'),
-                [printer('p8a'), printer('p8b')],
-            )]),
-            a('end')
-        ])
+                            [
+                                cf.PARALLEL_SPLIT(
+                                    printer('p0'),
+                                    printer('p0a'),
+                                    cf.PARALLEL_SPLIT(
+                                        printer('p0b'),
+                                        printer('p0c')
+                                    ),
+                                ),
+                                printer('xx')
+                            ],
+                            [
+                                a('AAA'),
+                                printer('p2b')
+                            ],
+                            printer('p3'),
+                            [
+                                a('p4a'),
+                                printer('p4b'),
+                                printer('p4c')
+                            ],
+                            [printer('p5'), cf.PARALLEL_SPLIT(
+                                printer('p6'),
+                                printer('p7'),
+                                [printer('p8a'), printer('p8b')],
+                            )]),
+                        a('end')
+                        ])
         we.process(doc)
 
         # give threads time to finish
@@ -379,20 +390,24 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         we = GenericWorkflowEngine()
         doc = self.getDoc()[0:1]
 
-        we.setWorkflow([i('start'),
-                        ut.RUN_WF([
-                                  lambda obj, eng: obj.append('bom'),
-                                  lambda obj, eng: obj.append('bam'),
-                                  lambda obj, eng: obj.append('bum'),
-                                  lambda obj, eng: obj.append('end'),
-                                  lambda obj, eng: obj.append(
-                                      eng.getVar('eng-end', '')),
-                                  e('eng-end', 'eng-end')
-                                  ],
-                                  data_connector=lambda obj, eng: [obj],
-                                  outkey='#wfe',
-                                  ),
-                        ])
+        we.setWorkflow(
+            [
+                i('start'),
+                ut.RUN_WF(
+                    [
+                        lambda obj, eng: obj.append('bom'),
+                        lambda obj, eng: obj.append('bam'),
+                        lambda obj, eng: obj.append('bum'),
+                        lambda obj, eng: obj.append('end'),
+                        lambda obj, eng: obj.append(
+                            eng.store.setdefault('eng-end', '')),
+                        e('eng-end', 'eng-end')
+                    ],
+                    data_connector=lambda obj, eng: [obj],
+                    outkey='#wfe',
+                ),
+            ]
+        )
         we.process(doc)
 
         d = ' '.join(doc[0])
@@ -420,21 +435,25 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         we = GenericWorkflowEngine()
         doc = self.getDoc()[0:1]
 
-        we.setWorkflow([i('start'),
-                        ut.RUN_WF([
-                                  lambda obj, eng: obj.append('bom'),
-                                  lambda obj, eng: obj.append('bam'),
-                                  lambda obj, eng: obj.append('bum'),
-                                  lambda obj, eng: obj.append('end'),
-                                  lambda obj, eng: obj.append(
-                                      eng.getVar('eng-end', '')),
-                                  e('eng-end', 'eng-end')
-                                  ],
-                                  data_connector=lambda obj, eng: [obj],
-                                  outkey='#wfe',
-                                  reinit=True
-                                  ),
-                        ])
+        we.callbacks.replace(
+            [
+                i('start'),
+                ut.RUN_WF(
+                    [
+                        lambda obj, eng: obj.append('bom'),
+                        lambda obj, eng: obj.append('bam'),
+                        lambda obj, eng: obj.append('bum'),
+                        lambda obj, eng: obj.append('end'),
+                        lambda obj, eng: obj.append(
+                            eng.store.setdefault('eng-end', '')),
+                        e('eng-end', 'eng-end')
+                    ],
+                    data_connector=lambda obj, eng: [obj],
+                    outkey='#wfe',
+                    reinit=True
+                ),
+            ]
+        )
         we.process(doc)
 
         d = ' '.join(doc[0])
@@ -456,14 +475,3 @@ class TestGenericWorkflowEngine(unittest.TestCase):
         assert d.count('bum') == 2
         assert 'end' in d
         assert 'eng-end' not in d  # it must not be present if reinit=True
-
-
-def suite():
-    suite = unittest.TestSuite()
-    # suite.addTest(TestGenericWorkflowEngine('test_RUN_WF02'))
-    suite.addTest(unittest.makeSuite(TestGenericWorkflowEngine))
-    return suite
-
-if __name__ == '__main__':
-    # unittest.main()
-    unittest.TextTestRunner(verbosity=2).run(suite())

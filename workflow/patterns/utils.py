@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2011, 2014 CERN.
+# Copyright (C) 2011, 2014, 2015 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
@@ -15,18 +15,15 @@ import six
 import sys
 import pstats
 import timeit
-from workflow.engine import duplicate_engine_instance, WorkflowTransition
+from workflow.errors import WorkflowTransition
 try:
     import cProfile
 except ImportError:
     import profile as cProfile
 
 
-def RUN_WF(workflow, engine=None,
-           processing_factory=None,
-           callback_chooser=None,
-           before_processing=None,
-           after_processing=None,
+def RUN_WF(workflow,
+           engine=None,
            data_connector=None,
            pass_eng=[],
            pass_always=None,
@@ -35,10 +32,7 @@ def RUN_WF(workflow, engine=None,
     """Task for running other workflow - i.e. new workflow engine will
     be created and the workflow run. The workflow engine is garbage
     collected together with the function. Therefore you can run the
-    function many times and it will reuse the already-loaded WE. In fact
-    this WE has an empty before_processing callback.
-
-    @see before_processing callback for more information.
+    function many times and it will reuse the already-loaded WE.
 
     :param workflow: normal workflow tasks definition
     :param engine: class of the engine to create WE, if None, the new
@@ -47,10 +41,6 @@ def RUN_WF(workflow, engine=None,
         many consequences, so be careful. For example, if you use
         serialiazable WFE instance, but you create another instance of WFE
         which is not serializable, then you will be in problems.
-    :param processing_factory: WE callback
-    :param callback_chooser: WE callback
-    :param before_processing: WE callback
-    :param after_processing: WE callback
     ---
     :param data_connector: callback which will prepare data and pass
         the corrent objects into the workflow engine (from the calling
@@ -66,56 +56,36 @@ def RUN_WF(workflow, engine=None,
     :param reinit: if True, wfe will be re-instantiated always
         for every invocation of the function
     """
-    store = []
-
+    @wraps(RUN_WF)
     def x(obj, eng=None):
 
-        # decorate the basic callback to make sure the objects of the calling
-        # engine are always there. But since the default callback no longer
-        # calls reset(), this is no longer necessary
-        # if not before_processing:
-        #    old = eng.before_processing
-        #    def _before_processing(obj, eng):
-        #        old(obj, eng)
-        #        setattr(eng, '_objects', obj)
-        # else:
-        #    _before_processing = None
+        if not outkey and reinit:
+            raise AssertionError("Cannot use `reinit` without `outkey`.")
 
         if engine:  # user supplied class
             engine_cls = engine
         else:
             engine_cls = eng.__class__
 
-        # a lot of typing, but let's make it explicit what happens...
-        _processing_factory = processing_factory or \
-            engine_cls.processing_factory
-        _callback_chooser = callback_chooser or engine_cls.callback_chooser
-        _before_processing = before_processing or engine_cls.before_processing
-        _after_processing = after_processing or engine_cls.after_processing
+        new_eng = engine_cls()
 
-        if not store:
-            store.append(engine_cls(processing_factory=_processing_factory,
-                                    callback_chooser=_callback_chooser,
-                                    before_processing=_before_processing,
-                                    after_processing=_after_processing))
-            store[0].setWorkflow(workflow)
+        if not reinit:
+            try:
+                new_eng = eng.extra_data[outkey]
+            except KeyError:
+                # This is the first time we are starting this engine, so
+                # failing to reinit is normal.
+                pass
 
-        if reinit:  # re-init wfe to have a clean plate
-            store[0] = engine_cls(processing_factory=_processing_factory,
-                                  callback_chooser=_callback_chooser,
-                                  before_processing=_before_processing,
-                                  after_processing=_after_processing)
-            store[0].setWorkflow(workflow)
-
-        wfe = store[0]
+        new_eng.callbacks.replace(workflow)
 
         if outkey:
-            eng.setVar(outkey, wfe)
+            eng.extra_data.setdefault(outkey, new_eng)
 
         # pass data from the old wf engine to the new one
         to_remove = []
         for k in pass_eng:
-            wfe.setVar(k, eng.getVar(k))
+            new_eng.store[k] = eng.extra_data[k]
             if not pass_always and not reinit:
                 to_remove.append(k)
         if to_remove:
@@ -124,12 +94,9 @@ def RUN_WF(workflow, engine=None,
 
         if data_connector:
             data = data_connector(obj, eng)
-            wfe.process(data)
+            new_eng.process(data)
         else:
-            if not isinstance(obj, list):
-                wfe.process([obj])
-            else:
-                wfe.process(obj)
+            new_eng.process(obj)
     x.__name__ = 'RUN_WF'
     return x
 
@@ -287,7 +254,7 @@ def PROFILE(call, output=None,
 
     def x(obj, eng):
         if isinstance(call, list) or isinstance(call, tuple):
-            new_eng = duplicate_engine_instance(eng)
+            new_eng = eng.duplicate()
             new_eng.setWorkflow(call)
             profileit = lambda: new_eng.process([obj])
         else:

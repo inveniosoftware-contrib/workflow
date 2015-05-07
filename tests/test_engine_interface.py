@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2014 CERN.
+# Copyright (C) 2014, 2015 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
 # more details.
 
-import unittest
 import sys
 import os
+from copy import deepcopy
+import mock
+import pytest
+from workflow.engine import MachineState
+from workflow.engine import Callbacks
 
 p = os.path.abspath(os.path.dirname(__file__) + '/../')
 if p not in sys.path:
@@ -18,162 +22,231 @@ if p not in sys.path:
 from workflow.engine import GenericWorkflowEngine
 
 
-def m(key):
+def obj_append(key):
     def _m(obj, eng):
         obj.append(key)
     return _m
 
 
-def stop_if_str(value):
+def stop_if_obj_str_eq(value):
     def x(obj, eng):
         if str(obj) == value:
             eng.stopProcessing()
     return lambda obj, eng: x(obj, eng)
 
 
-def asterisk_chooser(obj, eng):
-    return eng.getCallbacks('*')
+def jump_call(step=0):
+    return lambda obj, eng: eng.jump_call(step)
 
 
-def empty_chooser(obj, eng):
-    return []
+class TestSignals(object):
+
+    @pytest.mark.parametrize("signal_name", (
+        'workflow_started',
+        'workflow_halted',
+        'workflow_finished',
+    ))
+    def test_signals_are_emitted(self, signal_name):
+        from workflow.engine import Signal
+        from workflow import signals
+
+        # Create engine
+        eng = mock.create_autospec(GenericWorkflowEngine)
+
+        # Call signal
+        with mock.patch.object(signals, signal_name, autospec=True):
+            getattr(Signal, signal_name)(eng)
+            getattr(signals, signal_name).send.assert_called_once_with()
 
 
-def call_forward(step=0):
-    return lambda obj, eng: eng.jumpCallForward(step)
+    def test_log_warning_if_signals_lib_is_missing(self):
+        from workflow.engine import Signal
+
+        orig_import = __import__
+        def import_mock(name, *args):
+            if name == 'workflow.signals':
+                raise ImportError
+            return orig_import(name, *args)
+
+        # Patch the engine so that we can inspect calls
+        with mock.patch('workflow.engine.GenericWorkflowEngine') as patched_GWE:
+            eng = patched_GWE.return_value
+        # Patch __import__ so that importing workflow.signals raises ImportError
+        with mock.patch('__builtin__.__import__', side_effect=import_mock):
+            Signal.workflow_started(eng)
+        eng.log.warning.assert_called_once_with("Could not import signals lib; "
+                                                "ignoring all future signal calls.")
 
 
-class TestGenericWorkflowEngine(unittest.TestCase):
+def TestMachineState(object):
+
+    def test_machine_state_does_not_allow_elem_ptr_below_minus_one(self):
+        ms = MachineState()
+        ms.elem_ptr = 1
+        ms.elem_ptr = 0
+        ms.elem_ptr = -1
+        with pytest.raises(AttributeError):
+            ms.elem_ptr = -2
+
+
+    @pytest.mark.parametrize("params, elem_ptr, task_pos", (
+        (tuple(),       -1,     [0]),
+        ((5, [1, 2]),   5,      [1, 2]),
+    ))
+    def test_machine_state_reads_defaults(self, params, elem_ptr, task_pos):
+        "Test initialization of machine state with and without args."""
+        ms = MachineState(*params)
+        assert ms.elem_ptr == elem_ptr
+        assert ms.task_pos == task_pos
+
+lmb = [
+    lambda a: a,
+    lambda b: b + 1,
+    lambda c: c + 2,
+    lambda d: d + 3
+]
+
+class TestCallbacks(object):
+
+    @pytest.mark.parametrize("key,ret,exception", (
+        ('*', [], KeyError),
+        (None, {}, None),
+    ))
+    def test_callbacks_return_correct_when_empty(self, key, ret, exception):
+        cbs = Callbacks()
+        if exception:
+            with pytest.raises(exception) as exc_info:
+                cbs.get(key)
+            assert 'No workflow is registered for the key: ' + key in exc_info.value.args[0]
+        else:
+            assert cbs.get(key) == ret
+
+    @pytest.fixture()
+    def cbs(self):
+        return Callbacks()
+
+    @pytest.mark.parametrize("in_dict,ret", (
+        (
+            {'a': [lmb[0], lmb[1]], 'b': [lmb[2], lmb[3]]},
+            {'a': [lmb[0], lmb[1]], 'b': [lmb[2], lmb[3]]},
+        ),
+        (
+            {'a': [lmb[0], (lmb[1], lmb[2])]},
+            {'a': [lmb[0], lmb[1], lmb[2]]},
+        ),
+        (
+            {'a': [lmb[0], ((lmb[1],), lmb[2])]},
+            {'a': [lmb[0], lmb[1], lmb[2]]},
+        ),
+    ))
+    def test_callbacks_get_return_correct_after_add_many(self, cbs, in_dict, ret):
+        # Run `add_many`
+        for key, val in in_dict.iteritems():
+            cbs.add_many(val, key)
+        # Existing keys
+        for key, val in ret.iteritems():
+            assert cbs.get(key) == val
+
+
+    def test_callbacks_replace_from_used(self, cbs):
+        cbs.add_many(lmb, '*')
+        lmb_rev = lmb[::-1]
+        cbs.replace(lmb_rev, '*')
+
+        assert cbs.get('*') == lmb_rev
+
+
+    def test_callbacks_clear_maintains_exception(self, cbs):
+        cbs.add_many(lmb, 'some-key')
+        cbs.clear()
+        cbs.add_many(lmb, 'some-key')
+        with pytest.raises(KeyError) as exc_info:
+            cbs.get('missing')
+        assert 'No workflow is registered for the key: ' + 'missing' in exc_info.value.args[0]
+
+
+class TestGenericWorkflowEngine(object):
 
     """Tests of the WE interface"""
 
-    def setUp(self):
-        self.key = '*'
+    def setup_method(self, method):
+        # Don't turn this into some generator. One needs to be able to see what
+        # the input is.
+        self.d0 = [['one'], ['two'], ['three'], ['four'], ['five']]
+        self.d1 = [['one'], ['two'], ['three'], ['four'], ['five']]
+        self.d2 = [['one'], ['two'], ['three'], ['four'], ['five']]
 
-    def tearDown(self):
+    def teardown_method(self, method):
         pass
 
-    def getDoc(self, val=None):
-        if val:
-            return [[x] for x in val.split()]
-        return [[x] for x in u"one two three four five".split()]
-
-    def addTestCallbacks(self, no, eng):
-        if type == 1:
-            eng.addManyCallbacks()
-
-    # --------- initialization ---------------
-
     def test_init(self):
-        d1 = self.getDoc()
-        d2 = self.getDoc()
-        d3 = self.getDoc()
 
         # init with empty to full parameters
         we1 = GenericWorkflowEngine()
-        we2 = GenericWorkflowEngine(callback_chooser=asterisk_chooser)
 
-        try:
-            we3 = GenericWorkflowEngine(processing_factory='x',
-                                        callback_chooser='x',
-                                        before_processing='x',
-                                        after_processing='x')
-        except Exception as msg:
-            assert 'must be a callable' in str(msg)
+        callbacks = [
+            obj_append('mouse'),
+            [obj_append('dog'), jump_call(1), obj_append('cat'), obj_append('puppy')],
+            obj_append('horse'),
+        ]
 
-        try:
-            we3 = GenericWorkflowEngine(callback_chooser=asterisk_chooser,
-                                        after_processing='x')
-        except Exception as msg:
-            assert 'must be a callable' in str(msg)
+        we1.addManyCallbacks('*', deepcopy(callbacks))
 
-        we1.addManyCallbacks('*', [
-            m('mouse'),
-            [m('dog'), call_forward(1), m('cat'), m('puppy')],
-            m('horse'),
-        ])
-        we2.addManyCallbacks('*', [
-            m('mouse'),
-            [m('dog'), call_forward(1), m('cat'), m('puppy')],
-            m('horse'),
-        ])
-
-        we1.process(d1)
-        we2.process(d2)
+        we1.process(self.d1)
 
     def test_configure(self):
 
-        d1 = self.getDoc()
-        d2 = self.getDoc()
-        d3 = self.getDoc()
+        callbacks_list = [
+            obj_append('mouse'),
+            [obj_append('dog'), jump_call(1), obj_append('cat'), obj_append('puppy')],
+            obj_append('horse'),
+        ]
 
         we = GenericWorkflowEngine()
-        we.addManyCallbacks('*', [
-            m('mouse'),
-            [m('dog'), call_forward(1), m('cat'), m('puppy')],
-            m('horse'),
-        ])
+        we.addManyCallbacks('*', callbacks_list)
 
         # process using defaults
-        we.process(d1)
+        we.process(self.d1)
         r = 'one mouse dog cat puppy horse'.split()
 
-        # pass our own callback chooser
-        we.configure(callback_chooser=asterisk_chooser)
-        we.process(d2)
+        we = GenericWorkflowEngine()
+        we.addManyCallbacks('*', callbacks_list)
+        we.process(self.d2)
 
-        assert d1[0] == r
-        assert d2[0] == r
-        assert d1 == d2
-
-        # configure it wrongly
-        we.configure(callback_chooser='')
-
-        self.failUnlessRaises(Exception, we.process, d3)
-
-        assert d3 == self.getDoc()
+        assert self.d1[0] == r
+        assert self.d2[0] == r
+        assert self.d1 == self.d2
 
     # ------------ tests configuring the we --------------------
     def test_workflow01(self):
+
+        class GenericWEWithXChooser(GenericWorkflowEngine):
+            def callback_chooser(self, obj):
+                return self.callbacks.get('x')
+
         we0 = GenericWorkflowEngine()
         we1 = GenericWorkflowEngine()
-        we2 = GenericWorkflowEngine()
-
-        d0 = self.getDoc()
-        d1 = self.getDoc()
-        d2 = self.getDoc()
+        we2 = GenericWEWithXChooser()
 
         we0.addManyCallbacks('*', [
-            m('mouse'),
-            [m('dog'), call_forward(1), m('cat'), m('puppy')],
-            m('horse'),
+            obj_append('mouse'),
+            [obj_append('dog'), jump_call(1), obj_append('cat'), obj_append('puppy')],
+            obj_append('horse'),
         ])
         we1.setWorkflow([
-            m('mouse'),
-            [m('dog'), call_forward(1), m('cat'), m('puppy')],
-            m('horse'),
+            obj_append('mouse'),
+            [obj_append('dog'), jump_call(1), obj_append('cat'), obj_append('puppy')],
+            obj_append('horse'),
         ])
         we2.addManyCallbacks('x', [
-            m('mouse'),
-            [m('dog'), call_forward(1), m('cat'), m('puppy')],
-            m('horse'),
+            obj_append('mouse'),
+            [obj_append('dog'), jump_call(1), obj_append('cat'), obj_append('puppy')],
+            obj_append('horse'),
         ])
-        we2.configure(callback_chooser=lambda o, e: e.getCallbacks('x'))
 
-        we0.process(d0)
-        we1.process(d1)
-        we2.process(d2)
+        we0.process(self.d0)
+        we1.process(self.d1)
+        we2.process(self.d2)
 
-        assert d0 == d1
-        assert d0 == d2
-
-
-def suite():
-    suite = unittest.TestSuite()
-    # suite.addTest(WorkfloGenericWorkflowEngine('test_workflow'))
-    suite.addTest(unittest.makeSuite(TestGenericWorkflowEngine))
-    return suite
-
-if __name__ == '__main__':
-    # unittest.main()
-    unittest.TextTestRunner(verbosity=2).run(suite())
+        assert self.d0 == self.d1
+        assert self.d0 == self.d2

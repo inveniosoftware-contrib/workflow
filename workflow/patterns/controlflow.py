@@ -17,7 +17,6 @@ MAX_TIMEOUT = 30000
 
 
 from workflow.engine import GenericWorkflowEngine as engine
-from workflow.engine import duplicate_engine_instance
 
 # ----------------------- helper calls -------------------------------- #
 
@@ -214,7 +213,7 @@ def PARALLEL_SPLIT(*args):
         i = 0
         eng.setVar('lock', lock)
         for func in calls:
-            new_eng = duplicate_engine_instance(eng)
+            new_eng = eng.duplicate()
             new_eng.setWorkflow([lambda o, e: e.setVar('lock', lock), func])
             thread.start_new_thread(new_eng.process, ([obj], ))
             # new_eng.process([obj])
@@ -249,7 +248,7 @@ def SYNCHRONIZE(*args, **kwargs):
 
         for func in args[0:-1]:
             if isinstance(func, list) or isinstance(func, tuple):
-                new_eng = duplicate_engine_instance(eng)
+                new_eng = eng.duplicate()
                 new_eng.setWorkflow(func)
                 queue.put(lambda: new_eng.process([obj]))
             else:
