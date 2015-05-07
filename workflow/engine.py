@@ -41,6 +41,51 @@ LOGGING_LEVEL = logging.NOTSET
 LOG = None
 
 
+class _Signal(object):
+
+    def __init__(self):
+        self.errored_global = False
+        self.errored_engine = False
+
+    def signals(self, eng=None):
+        try:
+            import workflow.signals as signals
+            return signals
+        except ImportError:
+            import_error_msg = ("Could not import signals lib; "
+                                "ignoring all future signal calls.")
+            if eng and not self.errored_engine:
+                eng.log.warning(import_error_msg)
+                self.errored_engine = True
+            elif not eng and not self.errored_global:
+                import logging
+                logging.warning(import_error_msg)
+                self.errored_global = True
+
+    def workflow_halted(self, eng, *args, **kwargs):
+        signals = self.signals(eng)
+        if signals:
+            signals.workflow_halted.send(*args, **kwargs)
+
+    def workflow_error(self, eng, *args, **kwargs):
+        signals = self.signals(eng)
+        if signals:
+            signals.workflow_error.send(*args, **kwargs)
+
+    def workflow_started(self, eng, *args, **kwargs):
+        signals = self.signals(eng)
+        if signals:
+            signals.workflow_started.send(*args, **kwargs)
+
+    def workflow_finished(self, eng, *args, **kwargs):
+        signals = self.signals(eng)
+        if signals:
+            signals.workflow_finished.send(*args, **kwargs)
+
+
+Signal = _Signal()
+
+
 class MachineState(object):
     """Machine state storage.
 
@@ -253,8 +298,8 @@ class GenericWorkflowEngine(object):
         """Return the current state implementation."""
         return self._state
 
-    @property
-    def signal(self):
+    @staticproperty
+    def signal():  # pylint: disable=no-method-argument
         """Return the signal handler."""
         return Signal
 
@@ -969,10 +1014,10 @@ class TransitionActions(object):
             eng.log.debug('Warning, we go back [%s] objects' % step.args[0])
         TransitionActions.JumpToken(obj, eng, callbacks, step)
 
-    # Deprecated
     @staticmethod
     def Exception(obj, eng, callbacks, exc_info):
         """Action to take when an unhandled exception is raised."""
+        eng.signal.workflow_halted(eng)
         reraise(*exc_info)
 
 

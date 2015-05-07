@@ -57,6 +57,7 @@ tests_require = [
     'pytest>=2.6.1',
     'coverage'
     'mock==1.0.1',
+    'blinker==1.3',
 ]
 
 setup(

@@ -19,8 +19,8 @@ from collections import OrderedDict
 
 from six import iteritems
 from six.moves import cPickle
-from .engine import GenericWorkflowEngine
 from .engine import (
+    GenericWorkflowEngine,
     TransitionActions,
     ProcessingFactory,
     Break,
@@ -363,6 +363,11 @@ class DbTransitionAction(TransitionActions):
                      id_workflow=eng.uuid)
         eng.save(status=WorkflowStatus.ERROR)
         traceback.print_exception(*exc_info, file=sys.stderr)
+        try:
+            super(DbTransitionAction, DbTransitionAction).Exception(obj, eng, callbacks, exc_info)
+        except Exception:
+            # We expect this to reraise
+            pass
         raise WorkflowError(
             message=exception_repr,
             id_workflow=eng.uuid,
