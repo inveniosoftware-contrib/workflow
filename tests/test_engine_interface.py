@@ -58,11 +58,11 @@ class TestSignals(object):
             getattr(Signal, signal_name)(eng)
             getattr(signals, signal_name).send.assert_called_once_with()
 
-
     def test_log_warning_if_signals_lib_is_missing(self):
         from workflow.engine import Signal
 
         orig_import = __import__
+
         def import_mock(name, *args):
             if name == 'workflow.signals':
                 raise ImportError
@@ -88,7 +88,6 @@ def TestMachineState(object):
         with pytest.raises(AttributeError):
             ms.elem_ptr = -2
 
-
     @pytest.mark.parametrize("params, elem_ptr, task_pos", (
         (tuple(),       -1,     [0]),
         ((5, [1, 2]),   5,      [1, 2]),
@@ -105,6 +104,7 @@ lmb = [
     lambda c: c + 2,
     lambda d: d + 3
 ]
+
 
 class TestCallbacks(object):
 
@@ -147,14 +147,12 @@ class TestCallbacks(object):
         for key, val in ret.iteritems():
             assert cbs.get(key) == val
 
-
     def test_callbacks_replace_from_used(self, cbs):
         cbs.add_many(lmb, '*')
         lmb_rev = lmb[::-1]
         cbs.replace(lmb_rev, '*')
 
         assert cbs.get('*') == lmb_rev
-
 
     def test_callbacks_clear_maintains_exception(self, cbs):
         cbs.add_many(lmb, 'some-key')

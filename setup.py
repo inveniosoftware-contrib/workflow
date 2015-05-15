@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2011, 2014 CERN.
+# Copyright (C) 2011, 2014, 2015 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
@@ -23,13 +23,6 @@ class PyTest(TestCommand):
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
-        try:
-            from ConfigParser import ConfigParser
-        except ImportError:
-            from configparser import ConfigParser
-        config = ConfigParser()
-        config.read("pytest.ini")
-        self.pytest_args = config.get("pytest", "addopts").split(" ")
 
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -39,7 +32,7 @@ class PyTest(TestCommand):
     def run_tests(self):
         # import here, cause outside the eggs aren't loaded
         import pytest
-        errno = pytest.main(self.pytest_args)
+        errno = pytest.main(['tests'])
         sys.exit(errno)
 
 

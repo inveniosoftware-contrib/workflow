@@ -21,19 +21,23 @@ from six import reraise, string_types
 from .deprecation import deprecated
 from .errors import (
     BreakFromThisLoop,
+
     ContinueNextToken,
+    SkipToken,  # From engine_db
+
     HaltProcessing,
     JumpCall,
+
     JumpToken,
     JumpTokenBack,
     JumpTokenForward,
+
     StopProcessing,
-    WorkflowError
+    WorkflowError,
+    AbortProcessing,  # From engine_db
 )
 from .utils import staticproperty
 
-
-DEBUG = os.environ.get('WORKFLOW_DEBUG') or False
 LOGGING_LEVEL = logging.NOTSET
 LOG = None
 
@@ -298,7 +302,9 @@ class GenericWorkflowEngine(object):
 
     def init_logger(self):
         """Return the appropriate logger instance."""
-        return logging.getLogger("workflow.%s" % self.__class__)
+        # return get_logger(self.__module__ + "." + self.__class__.__name__)
+        return logging.getLogger(
+            "workflow.%s" % self.__class__)  # default logging
 
 
     #############################################################################
@@ -332,8 +338,7 @@ class GenericWorkflowEngine(object):
 
     def break_current_loop(self):
         """Break out of the current callbacks loop."""
-        if DEBUG:
-            self.log.debug('Break from this loop')
+        self.log.debug('Break from this loop')
         raise BreakFromThisLoop
     #                                                                           #
     #############################################################################
@@ -349,8 +354,7 @@ class GenericWorkflowEngine(object):
         :param offset: Number of steps to jump. May be positive or negative.
         :type offset: int
         """
-        if DEBUG:
-            self.log.debug('We skip [%s] calls' % offset)
+        self.log.debug('We skip [%s] calls' % offset)
         raise JumpCall(offset)
 
     @staticmethod
@@ -365,14 +369,16 @@ class GenericWorkflowEngine(object):
 
     def _pre_flight_checks(self, objects):
         """Ensure we are not out of oil."""
+        # Check that objects are an iterable and populated
         if not isinstance(objects, Iterable) or isinstance(objects, string_types):
             raise WorkflowError(
                 'Passed in object %s is not an iterable' % (objects.__class__))
         if not objects:
             self.log.warning('List of objects is empty. Running workflow '
                              'on empty set has no effect.')
+        # Check that callbacks are populated
         if not self.callbacks._dict:
-            raise Exception("The callbacks are empty, did you set them?")
+            raise WorkflowError("The callbacks are empty, did you set them?")
 
 
     def process(self, objects, stop_on_error=True, stop_on_halt=True,
@@ -472,14 +478,13 @@ class GenericWorkflowEngine(object):
                     task_pos[indent] += 1
                     continue
                 callback_func = inner_callbacks
-                if DEBUG:
-                    try:
-                        fnc_name = callback_func.__name__
-                    except AttributeError:
-                        fnc_name = "<Unnamed Function>"
-                    self.log.debug("Running ({0}{1}.) callback {2} for obj: {3}"
-                                   .format(indent * '-', self.state.task_pos,
-                                           fnc_name, repr(obj)))
+                try:
+                    fnc_name = callback_func.__name__
+                except AttributeError:
+                    fnc_name = "<Unnamed Function>"
+                self.log.debug("Running ({0}{1}.) callback {2} for obj: {3}"
+                               .format(indent * '-', self.state.task_pos,
+                                       fnc_name, repr(obj)))
                 self.processing_factory.action_mapper.before_each_callback(self, callback_func, obj)
                 try:
                     self.execute_callback(callback_func, obj)
@@ -912,9 +917,8 @@ class TransitionActions(object):
     @staticmethod
     def ContinueNextToken(obj, eng, callbacks, exc_info):
         """Action to take when ContinueNextToken is raised."""
-        if DEBUG:
-            eng.log.debug("Stop processing for this object, "
-                          "continue with next")
+        eng.log.debug("Stop processing for this object, "
+                      "continue with next")
         eng.state.task_pos_reset()
         raise Continue
 
@@ -955,8 +959,7 @@ class TransitionActions(object):
         """Action to take when JumpTokenForward is raised."""
         if step.args[0] < 0:
             raise WorkflowError("JumpTokenForward cannot be negative number")
-        if DEBUG:
-            eng.log.debug('We skip [%s] objects' % step.args[0])
+        eng.log.debug('We skip [%s] objects' % step.args[0])
         TransitionActions.JumpToken(obj, eng, callbacks, step)
 
     @staticmethod
@@ -966,8 +969,7 @@ class TransitionActions(object):
         """Action to take when JumpTokenBack is raised."""
         if step.args[0] > 0:
             raise WorkflowError("JumpTokenBack cannot be positive number")
-        if DEBUG:
-            eng.log.debug('Warning, we go back [%s] objects' % step.args[0])
+        eng.log.debug('Warning, we go back [%s] objects' % step.args[0])
         TransitionActions.JumpToken(obj, eng, callbacks, step)
 
     @staticmethod
@@ -975,6 +977,26 @@ class TransitionActions(object):
         """Action to take when an unhandled exception is raised."""
         eng.signal.workflow_halted(eng)
         reraise(*exc_info)
+
+    # From engine_db
+    @staticmethod
+    def SkipToken(obj, eng, callbacks, e):
+        """Action to take when SkipToken is raised."""
+        msg = "Skipped running this object: '%s' (object: %s)" % \
+            (str(callbacks), repr(obj))
+        eng.log.debug(msg)
+        obj.log.debug(msg)
+        raise Continue
+
+    # From engine_db
+    @staticmethod
+    def AbortProcessing(obj, eng, callbacks, e):
+        """Action to take when AbortProcessing is raised."""
+        msg = "Processing was aborted: '%s' (object: %s)" % \
+            (str(callbacks), repr(obj))
+        eng.log.debug(msg)
+        obj.log.debug(msg)
+        raise Break
 
 
 class ProcessingFactory(object):

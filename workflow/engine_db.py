@@ -23,10 +23,9 @@ from .engine import (
     Break,
     Continue,
 )
-from .errors import AbortProcessing, SkipToken, WorkflowError
 from .deprecation import deprecated
+from .errors import WorkflowError
 from .utils import staticproperty
-
 
 class WorkflowStatus(object):
     """Define the known workflow statuses.
@@ -126,44 +125,10 @@ class DbWorkflowEngine(GenericWorkflowEngine):
         :type db_obj: Workflow
         """
         self.db_obj = db_obj
-        self.save()
+        self.save(WorkflowStatus.NEW)
         # To initialize the logger, `db_obj` must be first set. For this we
         # must have saved at least once before calling `__init__`.
         super(DbWorkflowEngine, self).__init__()
-
-    @classmethod
-    def with_name(cls, name, id_user=0, module_name="Unknown",
-                  **kwargs):
-        """ Instantiate a DbWorkflowEngine given a name or UUID.
-
-        :param name: name of workflow to run.
-        :type name: str
-
-        :param id_user: id of user to associate with workflow
-        :type id_user: int
-
-        :param module_name: label used to query groups of workflows.
-        :type module_name: str
-        """
-        db_obj = Workflow(
-            name=name,
-            id_user=id_user,
-            module_name=module_name,
-            uuid=new_uuid()
-        )
-        return cls(db_obj, **kwargs)
-
-    @classmethod
-    def from_uuid(cls, uuid, **kwargs):
-        """ Load a workflow from the database given a UUID.
-
-        :param uuid: pass a uuid to an existing workflow.
-        :type uuid: str
-        """
-        db_obj = Workflow.get(Workflow.uuid == uuid).first()
-        if db_obj is None:
-            raise LookupError("No workflow with UUID {} was found".format(uuid))
-        return cls(db_obj, **kwargs)
 
     @staticproperty
     def processing_factory():  # pylint: disable=no-method-argument
@@ -187,6 +152,11 @@ class DbWorkflowEngine(GenericWorkflowEngine):
     def status(self):
         """Return the status."""
         return self.db_obj.status
+
+    @property
+    def uuid(self):
+        """Return the status."""
+        return self.db_obj.uuid
 
     # XXX renamed recently from 'objects'
     @property
@@ -227,7 +197,7 @@ DbWorkflowEngine
 -------------------------------
 """ % (self.db_obj.__str__(),)
 
-    def save(self, status=None):
+    def save(self, status):
         """Save the workflow instance to database."""
         # This workflow continues a previous execution.
         self.db_obj.save(status)
@@ -235,7 +205,7 @@ DbWorkflowEngine
     ############################################################################
     #                                                                          #
 
-    # TODO: Modify the counters via signals instead
+    # TODO: Kill these counters
     def set_counter_initial(self, obj_count):
         """Initiate the counters of object states.
 
@@ -261,14 +231,6 @@ DbWorkflowEngine
 
     #                                                                          #
     ############################################################################
-
-    def abortProcessing(self):
-        """Abort current workflow execution without saving object."""
-        raise AbortProcessing
-
-    def skipToken(self):
-        """Skip current workflow object without saving it."""
-        raise SkipToken
 
 
 class DbTransitionAction(TransitionActions):
@@ -297,12 +259,13 @@ class DbTransitionAction(TransitionActions):
         """Action to take when HaltProcessing is raised."""
         e = exc_info[1]
         eng.increase_counter_halted()
+        # FIXME: This makes no logical sense. Split to two exceptions.
         if e.action:
             obj.set_action(e.action, e.message)
-            version = ObjectStatus.HALTED  #  pylint: disable=no-member
+            obj_version = ObjectStatus.HALTED  #  pylint: disable=no-member
         else:
-            version = ObjectStatus.WAITING  #  pylint: disable=no-member
-        obj.save(version=version, task_counter=eng.state.task_pos,
+            obj_version = ObjectStatus.WAITING  #  pylint: disable=no-member
+        obj.save(version=obj_version, task_counter=eng.state.task_pos,
                  id_workflow=eng.uuid)
         eng.save(status=WorkflowStatus.HALTED)
         message = "Workflow '%s' halted at task %s with message: %s" % \
@@ -310,9 +273,6 @@ class DbTransitionAction(TransitionActions):
         eng.log.warning(message)
         super(DbTransitionAction, DbTransitionAction).HaltProcessing(obj, eng, callbacks, exc_info)
 
-    @staticmethod
-    def WorkflowError(obj, eng, callbacks, e):
-        raise
 
     @staticmethod
     def Exception(obj, eng, callbacks, exc_info):
@@ -324,9 +284,9 @@ class DbTransitionAction(TransitionActions):
         if obj:
             # Sets an error message as a tuple (title, details)
             obj.set_error_message(exception_repr)
-            obj.save(ObjectStatus.ERROR, eng.state.task_pos,  #  pylint: disable=no-member
+            obj.save(version=ObjectStatus.ERROR, task_counter=eng.state.task_pos,  #  pylint: disable=no-member
                      id_workflow=eng.uuid)
-        eng.save(status=WorkflowStatus.ERROR)
+        eng.save(WorkflowStatus.ERROR)
         traceback.print_exception(*exc_info, file=sys.stderr)
         try:
             super(DbTransitionAction, DbTransitionAction).Exception(obj, eng, callbacks, exc_info)
@@ -365,7 +325,7 @@ class DbProcessingFactory(ProcessingFactory):
     @staticmethod
     def before_processing(eng, objects):
         """Executed before processing the workflow."""
-        eng.save(status=WorkflowStatus.RUNNING)
+        eng.save(WorkflowStatus.RUNNING)
         eng.set_counter_initial(len(objects))
         super(DbProcessingFactory, DbProcessingFactory).before_processing(eng, objects)
 
