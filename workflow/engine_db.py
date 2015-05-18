@@ -78,12 +78,18 @@ class _ObjectStatus(object):
         for idx, key in enumerate(self._statuses.keys()):
             setattr(self, key, idx)
 
+    def __dir__(self):
+        """Restore auto-completion for names found via `__getattr__`."""
+        dir_ = dir(type(self)) + list(self.__dict__.keys())
+        dir_.extend(self._statuses.keys())
+        return sorted(dir_)
+
     @property
     @deprecated("Please use ObjectStatus.COMPLETED "
                 "instead of ObjectStatus.FINAL")
     def FINAL(self):
         """Return cls.COMPLETED, although this is deprecated."""
-        return self.COMPLETED  # pylint: disable=no-member
+        return self.COMPLETED
 
     def name(self, version):
         """Human readable name from the integer state representation."""
@@ -168,19 +174,19 @@ class DbWorkflowEngine(GenericWorkflowEngine):
     def final_objects(self):
         """Return the objects associated with this workflow."""
         return [obj for obj in self.database_objects
-                if obj.version in [ObjectStatus.COMPLETED]]  #  pylint: disable=no-member
+                if obj.version in [ObjectStatus.COMPLETED]]
 
     @property
     def halted_objects(self):
         """Return the objects associated with this workflow."""
         return [obj for obj in self.database_objects
-                if obj.version in [ObjectStatus.HALTED]]  #  pylint: disable=no-member
+                if obj.version in [ObjectStatus.HALTED]]
 
     @property
     def running_objects(self):
         """Return the objects associated with this workflow."""
         return [obj for obj in self.database_objects
-                if obj.version in [ObjectStatus.RUNNING]]  #  pylint: disable=no-member
+                if obj.version in [ObjectStatus.RUNNING]]
     #                                                                          #
     ############################################################################
 
@@ -197,7 +203,7 @@ DbWorkflowEngine
 -------------------------------
 """ % (self.db_obj.__str__(),)
 
-    def save(self, status):
+    def save(self, status=None):
         """Save the workflow instance to database."""
         # This workflow continues a previous execution.
         self.db_obj.save(status)
@@ -262,9 +268,9 @@ class DbTransitionAction(TransitionActions):
         # FIXME: This makes no logical sense. Split to two exceptions.
         if e.action:
             obj.set_action(e.action, e.message)
-            obj_version = ObjectStatus.HALTED  #  pylint: disable=no-member
+            obj_version = ObjectStatus.HALTED
         else:
-            obj_version = ObjectStatus.WAITING  #  pylint: disable=no-member
+            obj_version = ObjectStatus.WAITING
         obj.save(version=obj_version, task_counter=eng.state.task_pos,
                  id_workflow=eng.uuid)
         eng.save(status=WorkflowStatus.HALTED)
@@ -284,7 +290,7 @@ class DbTransitionAction(TransitionActions):
         if obj:
             # Sets an error message as a tuple (title, details)
             obj.set_error_message(exception_repr)
-            obj.save(version=ObjectStatus.ERROR, task_counter=eng.state.task_pos,  #  pylint: disable=no-member
+            obj.save(version=ObjectStatus.ERROR, task_counter=eng.state.task_pos,
                      id_workflow=eng.uuid)
         eng.save(WorkflowStatus.ERROR)
         traceback.print_exception(*exc_info, file=sys.stderr)
@@ -311,14 +317,14 @@ class DbProcessingFactory(ProcessingFactory):
     @staticmethod
     def before_object(eng, objects, obj):
         """Action to take before the proccessing of an object begins."""
-        obj.save(version=ObjectStatus.RUNNING, id_workflow=eng.db_obj.uuid)  #  pylint: disable=no-member
+        obj.save(version=ObjectStatus.RUNNING, id_workflow=eng.db_obj.uuid)
         super(DbProcessingFactory, DbProcessingFactory).before_object(eng, objects, obj)
 
     @staticmethod
     def after_object(eng, objects, obj):
         """Action to take once the proccessing of an object completes."""
         # We save each object once it is fully run through
-        obj.save(version=ObjectStatus.COMPLETED)  #  pylint: disable=no-member
+        obj.save(version=ObjectStatus.COMPLETED)
         eng.increase_counter_finished()
         super(DbProcessingFactory, DbProcessingFactory).after_object(eng, objects, obj)
 

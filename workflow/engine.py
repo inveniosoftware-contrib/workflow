@@ -382,7 +382,7 @@ class GenericWorkflowEngine(object):
 
 
     def process(self, objects, stop_on_error=True, stop_on_halt=True,
-                initial_run=True):
+                initial_run=True, reset_state=True):
         """Start processing `objects`.
 
         :param objects: list of objects to be processed
@@ -396,7 +396,9 @@ class GenericWorkflowEngine(object):
             `transitions_exception_mapper`.
         """
         self._pre_flight_checks(objects)
-        self.state.reset()
+
+        if reset_state:
+            self.state.reset()
 
         while True:
             try:
@@ -414,7 +416,7 @@ class GenericWorkflowEngine(object):
                 if stop_on_error:
                     raise
 
-    # XXX: Interface changed. No longer static
+    # XXX: No longer static
     def callback_chooser(self, obj):
         """Choose proper callback method.
 
@@ -576,7 +578,7 @@ class GenericWorkflowEngine(object):
             return callback_list.func_name
 
     def restart(self, obj, task, objects=None, stop_on_error=True,
-                stop_on_halt=False):
+                stop_on_halt=True):
         """Restart the workflow engine at given object and task.
 
         Will restart the workflow engine instance at given object and task
@@ -633,7 +635,7 @@ class GenericWorkflowEngine(object):
         elif obj == 'first':
             self.state.elem_ptr = -1
         else:
-            raise Exception('Unknown start point for object: %s' % obj)
+            raise Exception('Unknown start point %s for object: %s' % obj)
 
         # set the task that will be executed first
         if task == 'prev':
@@ -650,7 +652,8 @@ class GenericWorkflowEngine(object):
         else:
             raise Exception('Unknown start point for task: %s' % obj)
 
-        self._process(new_objects)
+        self.process(new_objects, stop_on_error=stop_on_error,
+                     stop_on_halt=stop_on_halt, reset_state=False)
 
     # XXX Now a property
     # XXX Now returns only active objects
