@@ -143,12 +143,6 @@ class DbWorkflowEngine(GenericWorkflowEngine):
 
     ############################################################################
     #                                                                          #
-    # Deprecated
-    @property
-    def counter_object(self):
-        """Return the number of object."""
-        raise NotImplementedError
-
     @property
     def name(self):
         """Return the name."""
@@ -208,36 +202,6 @@ DbWorkflowEngine
         # This workflow continues a previous execution.
         self.db_obj.save(status)
 
-    ############################################################################
-    #                                                                          #
-
-    # TODO: Kill these counters
-    def set_counter_initial(self, obj_count):
-        """Initiate the counters of object states.
-
-        :param obj_count: Number of objects to process.
-        :type obj_count: int
-        """
-        self.db_obj.counter_initial = obj_count
-        self.db_obj.counter_halted = 0
-        self.db_obj.counter_error = 0
-        self.db_obj.counter_finished = 0
-
-    def increase_counter_halted(self):
-        """Indicate we halted the processing of one object."""
-        self.db_obj.counter_halted += 1
-
-    def increase_counter_error(self):
-        """Indicate we crashed the processing of one object."""
-        self.db_obj.counter_error += 1
-
-    def increase_counter_finished(self):
-        """Indicate we finished the processing of one object."""
-        self.db_obj.counter_finished += 1
-
-    #                                                                          #
-    ############################################################################
-
 
 class DbTransitionAction(TransitionActions):
     """Transition actions on engine exceptions for persistence object."""
@@ -286,7 +250,6 @@ class DbTransitionAction(TransitionActions):
         exception_repr = ''.join(traceback.format_exception(*exc_info))
         msg = "Error:\n%s" % (exception_repr)
         eng.log.error(msg)
-        eng.increase_counter_error()
         if obj:
             # Sets an error message as a tuple (title, details)
             obj.set_error_message(exception_repr)
@@ -325,14 +288,12 @@ class DbProcessingFactory(ProcessingFactory):
         """Action to take once the proccessing of an object completes."""
         # We save each object once it is fully run through
         obj.save(version=ObjectStatus.COMPLETED)
-        eng.increase_counter_finished()
         super(DbProcessingFactory, DbProcessingFactory).after_object(eng, objects, obj)
 
     @staticmethod
     def before_processing(eng, objects):
         """Executed before processing the workflow."""
         eng.save(WorkflowStatus.RUNNING)
-        eng.set_counter_initial(len(objects))
         super(DbProcessingFactory, DbProcessingFactory).before_processing(eng, objects)
 
     @staticmethod
