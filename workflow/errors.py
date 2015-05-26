@@ -143,14 +143,14 @@ class WorkflowDefinitionError(Exception):
                                                       payload)
 
 
-@with_str(('message', ('obj_version', 'id_object')))
+@with_str(('message', ('obj_status', 'id_object')))
 class WorkflowObjectStatusError(Exception):
     """Raised when workflow object has an unknown or missing version."""
 
-    def __init__(self, message, id_object, obj_version):
+    def __init__(self, message, id_object, obj_status):
         """Instanciate a WorkflowObjectStatusError object."""
         self.message = message
-        self.obj_version = obj_version
+        self.obj_status = obj_status
         self.id_object = id_object
 
 

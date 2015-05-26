@@ -85,6 +85,10 @@ setup(
     },
     tests_require=tests_require,
     cmdclass={'test': PyTest},
-    install_requires=['configobj>4.7.0', 'six'],
+    install_requires=[
+        'configobj>4.7.0',
+        'enum34>=1.0.4',
+        'six',
+    ],
     long_description=open('README.rst').read(),
 )

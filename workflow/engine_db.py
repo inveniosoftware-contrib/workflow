@@ -12,9 +12,8 @@
 from __future__ import absolute_import
 
 import traceback
-from collections import OrderedDict
+from enum import Enum
 
-from six import iteritems
 from six.moves import cPickle
 from .engine import (
     GenericWorkflowEngine,
@@ -27,19 +26,18 @@ from .deprecation import deprecated
 from .errors import WorkflowError
 from .utils import staticproperty
 
-class WorkflowStatus(object):
-    """Define the known workflow statuses.
 
-       ================  =============
-       Attribute         Internal repr
-       ================  =============
-       NEW               0
-       RUNNING           1
-       HALTED            2
-       ERROR             3
-       COMPLETED         4
-       ================  =============
-    """
+class EnumLabel(Enum):
+    def __init__(self, label):
+        self.label = self.labels[label]
+
+    @staticproperty
+    def labels():  # pylint: disable=no-method-argument
+        raise NotImplementedError
+
+
+class WorkflowStatus(EnumLabel):
+    """Define the known workflow statuses. """
 
     NEW = 0
     RUNNING = 1
@@ -47,59 +45,36 @@ class WorkflowStatus(object):
     ERROR = 3
     COMPLETED = 4
 
+    @staticproperty
+    def labels():  # pylint: disable=no-method-argument
+        return {
+            0: "New",
+            1: "Running",
+            2: "Halted",
+            3: "Error",
+            4: "Completed",
+        }
 
-# enum34 lib is not used here is because comparisons against non-enumeration
-# values will always compare not equal (in other words, `0 in ObjectStatus`
-# would always return `False`.
-class _ObjectStatus(object):
-    """Specify the known object statuses.
 
-       ================ =================== =============
-       Attribute        Human-friendly name Internal repr
-       ================ =================== =============
-       INTIAL           New                 0
-       COMPLETED        Done                1
-       HALTED           Need action         2
-       RUNNING          In process          3
-       WAITING          Waiting             4
-       ERROR            Error               5
-       ================ =================== =============
-    """
+class ObjectStatus(EnumLabel):
+    """Specify the known object statuses."""
 
-    def __init__(self):
-        self._statuses = OrderedDict((
-            ('INITIAL', "New"),         # 0
-            ('COMPLETED', "Done"),      # 1
-            ('HALTED', "Need action"),  # 2
-            ('RUNNING', "In process"),  # 3
-            ('WAITING', "Waiting"),     # 4
-            ('ERROR', "Error"),         # 5
-        ))
-        for idx, key in enumerate(self._statuses.keys()):
-            setattr(self, key, idx)
+    INITIAL = 0
+    COMPLETED = 1
+    HALTED = 2
+    RUNNING = 3
+    ERROR = 4
 
-    def __dir__(self):
-        """Restore auto-completion for names found via `__getattr__`."""
-        dir_ = dir(type(self)) + list(self.__dict__.keys())
-        dir_.extend(self._statuses.keys())
-        return sorted(dir_)
+    @staticproperty
+    def labels():  # pylint: disable=no-method-argument
+        return {
+            0: "New",
+            1: "Done",
+            2: "Need action",
+            3: "In process",
+            4: "Error",
+        }
 
-    @property
-    @deprecated("Please use ObjectStatus.COMPLETED "
-                "instead of ObjectStatus.FINAL")
-    def FINAL(self):
-        """Return cls.COMPLETED, although this is deprecated."""
-        return self.COMPLETED
-
-    def name(self, version):
-        """Human readable name from the integer state representation."""
-        return self._statuses.values()[version]
-
-    def __contains__(self, val):
-        return val in range(len(self._statuses))
-
-# Required in order to be able to implement `__contains__`.
-ObjectStatus = _ObjectStatus()
 
 
 class DbWorkflowEngine(GenericWorkflowEngine):
@@ -141,6 +116,10 @@ class DbWorkflowEngine(GenericWorkflowEngine):
         """Provide a proccessing factory."""
         return DbProcessingFactory
 
+    @staticproperty
+    def known_statuses():  # pylint: disable=no-method-argument
+        return WorkflowStatus
+
     ############################################################################
     #                                                                          #
     @property
@@ -168,19 +147,19 @@ class DbWorkflowEngine(GenericWorkflowEngine):
     def final_objects(self):
         """Return the objects associated with this workflow."""
         return [obj for obj in self.database_objects
-                if obj.version in [ObjectStatus.COMPLETED]]
+                if obj.status in [obj.known_statuses.COMPLETED]]
 
     @property
     def halted_objects(self):
         """Return the objects associated with this workflow."""
         return [obj for obj in self.database_objects
-                if obj.version in [ObjectStatus.HALTED]]
+                if obj.status in [obj.known_statuses.HALTED]]
 
     @property
     def running_objects(self):
         """Return the objects associated with this workflow."""
         return [obj for obj in self.database_objects
-                if obj.version in [ObjectStatus.RUNNING]]
+                if obj.status in [obj.known_statuses.RUNNING]]
     #                                                                          #
     ############################################################################
 
@@ -204,8 +183,12 @@ DbWorkflowEngine
 
 
 class DbTransitionAction(TransitionActions):
-    """Transition actions on engine exceptions for persistence object."""
+    """Transition actions on engine exceptions for persistence object.
 
+    ..note::
+        Typical actions to take here is store the new state of the object and
+        save it, save the engine, log a message and finally call `super`.
+    """
     @staticmethod
     def SkipToken(obj, eng, callbacks, e):
         """Action to take when SkipToken is raised."""
@@ -228,14 +211,7 @@ class DbTransitionAction(TransitionActions):
     def HaltProcessing(obj, eng, callbacks, exc_info):
         """Action to take when HaltProcessing is raised."""
         e = exc_info[1]
-        eng.increase_counter_halted()
-        # FIXME: This makes no logical sense. Split to two exceptions.
-        if e.action:
-            obj.set_action(e.action, e.message)
-            obj_version = ObjectStatus.HALTED
-        else:
-            obj_version = ObjectStatus.WAITING
-        obj.save(version=obj_version, task_counter=eng.state.task_pos,
+        obj.save(status=obj.known_statuses.HALTED, task_counter=eng.state.task_pos,
                  id_workflow=eng.uuid)
         eng.save(status=WorkflowStatus.HALTED)
         message = "Workflow '%s' halted at task %s with message: %s" % \
@@ -253,7 +229,7 @@ class DbTransitionAction(TransitionActions):
         if obj:
             # Sets an error message as a tuple (title, details)
             obj.set_error_message(exception_repr)
-            obj.save(version=ObjectStatus.ERROR, task_counter=eng.state.task_pos,
+            obj.save(status=obj.known_statuses.ERROR, task_counter=eng.state.task_pos,
                      id_workflow=eng.uuid)
         eng.save(WorkflowStatus.ERROR)
         traceback.print_exception(*exc_info, file=sys.stderr)
@@ -280,14 +256,14 @@ class DbProcessingFactory(ProcessingFactory):
     @staticmethod
     def before_object(eng, objects, obj):
         """Action to take before the proccessing of an object begins."""
-        obj.save(version=ObjectStatus.RUNNING, id_workflow=eng.db_obj.uuid)
+        obj.save(status=obj.known_statuses.RUNNING, id_workflow=eng.db_obj.uuid)
         super(DbProcessingFactory, DbProcessingFactory).before_object(eng, objects, obj)
 
     @staticmethod
     def after_object(eng, objects, obj):
         """Action to take once the proccessing of an object completes."""
         # We save each object once it is fully run through
-        obj.save(version=ObjectStatus.COMPLETED)
+        obj.save(status=obj.known_statuses.COMPLETED, id_workflow=eng.db_obj.uuid)
         super(DbProcessingFactory, DbProcessingFactory).after_object(eng, objects, obj)
 
     @staticmethod
