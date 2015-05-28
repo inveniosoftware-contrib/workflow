@@ -92,48 +92,48 @@ class MachineState(object):
 
     :Properties:
 
-        :elem_ptr:
+        :token_pos:
 
         As the WFE proceeds, it increments this internal counter: the
         number of the element. This pointer increases before the object is taken.
 
-        :task_pos:
+        :callback_pos:
 
         Reserved for the array that points to the task position.
         The number there points to the task that is currently executed; when
         error happens, it will be there unchanged. The pointer is updated after
         the task finished running.
     """
-    def __init__(self, elem_ptr=None, task_pos=None):
+    def __init__(self, token_pos=None, callback_pos=None):
         """Initialize the state of a Workflow machine."""
         self.reset()
-        if elem_ptr is not None:
-            self.elem_ptr = elem_ptr
-        if task_pos is not None:
-            self.task_pos = task_pos
+        if token_pos is not None:
+            self.token_pos = token_pos
+        if callback_pos is not None:
+            self.callback_pos = callback_pos
 
     def __setattr__(self, name, value):
-        if name == 'elem_ptr' and value < -1:
-            raise AttributeError("elem_ptr may not be < -1")
+        if name == 'token_pos' and value < -1:
+            raise AttributeError("token_pos may not be < -1")
         super(MachineState, self).__setattr__(name, value)
 
     def reset(self):
         """Reset the state of the machine."""
-        self.elem_ptr_reset()
-        self.task_pos_reset()
+        self.token_pos_reset()
+        self.callback_pos_reset()
         self.current_object_processed = False
 
-    def elem_ptr_reset(self):
-        """Reset `elem_ptr` to its default value."""
-        self.elem_ptr = -1
+    def token_pos_reset(self):
+        """Reset `token_pos` to its default value."""
+        self.token_pos = -1
 
-    def task_pos_reset(self):
-        """Reset `task_pos` to its default value."""
-        self.task_pos = [0]
+    def callback_pos_reset(self):
+        """Reset `callback_pos` to its default value."""
+        self.callback_pos = [0]
 
     @staticproperty
     def _state_keys():  # pylint: disable=no-method-argument
-        return ('elem_ptr', 'task_pos', 'current_object_processed')
+        return ('token_pos', 'callback_pos', 'current_object_processed')
 
     def __getstate__(self):
         return {key: getattr(self, key) for key in self._state_keys}
@@ -424,27 +424,27 @@ class GenericWorkflowEngine(object):
             The position adjusting also happens after the
             task has finished.
         """
-        task_pos = self.state.task_pos
-        while task_pos[indent] < len(callbacks):
-            was_restarted = len(task_pos) - 1 > indent
+        callback_pos = self.state.callback_pos
+        while callback_pos[indent] < len(callbacks):
+            was_restarted = len(callback_pos) - 1 > indent
             if was_restarted:
                 self.log.debug(
                     'Fast-forwarding to the position:callback = {0}:{1}'
-                        .format(indent, task_pos[indent]))
+                        .format(indent, callback_pos[indent]))
                 # print 'indent=%s, y=%s, y=%s, \nbefore=%s\nafter=%s' %
                 # (indent, y, y[indent], callbacks, callbacks[y[indent]])
-                self.run_callbacks(callbacks[task_pos[indent]], objects, obj,
+                self.run_callbacks(callbacks[callback_pos[indent]], objects, obj,
                                    indent + 1)
-                task_pos.pop(-1)
-                task_pos[indent] += 1
+                callback_pos.pop(-1)
+                callback_pos[indent] += 1
                 continue
-            inner_callbacks = callbacks[task_pos[indent]]
+            inner_callbacks = callbacks[callback_pos[indent]]
             try:
                 if isinstance(inner_callbacks, Iterable):
-                    task_pos.append(0)
+                    callback_pos.append(0)
                     self.run_callbacks(inner_callbacks, objects, obj, indent + 1)
-                    task_pos.pop(-1)
-                    task_pos[indent] += 1
+                    callback_pos.pop(-1)
+                    callback_pos[indent] += 1
                     continue
                 callback_func = inner_callbacks
                 try:
@@ -452,7 +452,7 @@ class GenericWorkflowEngine(object):
                 except AttributeError:
                     fnc_name = "<Unnamed Function>"
                 self.log.debug("Running ({0}{1}.) callback {2} for obj: {3}"
-                               .format(indent * '-', self.state.task_pos,
+                               .format(indent * '-', self.state.callback_pos,
                                        fnc_name, repr(obj)))
                 self.processing_factory.action_mapper.before_each_callback(self, callback_func, obj)
                 try:
@@ -464,13 +464,13 @@ class GenericWorkflowEngine(object):
             except JumpCall as jc:
                 step = jc.args[0]
                 if step >= 0:
-                    task_pos[indent] = min(len(callbacks), task_pos[indent] + step - 1)
+                    callback_pos[indent] = min(len(callbacks), callback_pos[indent] + step - 1)
                 else:
-                    task_pos[indent] = max(-1, task_pos[indent] + step - 1)
-            task_pos[indent] += 1
+                    callback_pos[indent] = max(-1, callback_pos[indent] + step - 1)
+            callback_pos[indent] += 1
         # adjust the counter so that it always points to the last successfully
         # executed task
-        task_pos[indent] -= 1
+        callback_pos[indent] -= 1
 
     def _process(self, objects):
         """Default processing factory, will process objects in order.
@@ -485,9 +485,9 @@ class GenericWorkflowEngine(object):
         :param objects: list of objects (passed in by self.process())
         """
         self.processing_factory.before_processing(self, objects)
-        while len(objects) - 1 > self.state.elem_ptr:
-            self.state.elem_ptr += 1
-            obj = objects[self.state.elem_ptr]
+        while len(objects) - 1 > self.state.token_pos:
+            self.state.token_pos += 1
+            obj = objects[self.state.token_pos]
             self.processing_factory.before_object(self, objects, obj)
             callbacks = self.callback_chooser(obj)
             if callbacks:
@@ -519,7 +519,7 @@ class GenericWorkflowEngine(object):
                         continue
                 else:
                     self.processing_factory.after_object(self, objects, obj)
-            self.state.task_pos_reset()
+            self.state.callback_pos_reset()
         self.processing_factory.after_processing(self, objects)
 
     def execute_callback(self, callback, obj):
@@ -534,7 +534,7 @@ class GenericWorkflowEngine(object):
         # TODO: Use the latest key, instead of '*'.
         callback_list = self.callbacks.get('*')
         if callback_list:
-            for i in self.state.task_pos:
+            for i in self.state.callback_pos:
                 if not isinstance(callback_list, Callable):
                     callback_list = callback_list[i]
             if isinstance(callback_list, list):
@@ -593,29 +593,29 @@ class GenericWorkflowEngine(object):
         # should actually point to -1 of what we want to process
         if obj == 'prev':
             # start with the previous object
-            self.state.elem_ptr -= 2
+            self.state.token_pos -= 2
         elif obj == 'current':
             # continue with the current object
-            self.state.elem_ptr -= 1
+            self.state.token_pos -= 1
         elif obj == 'next':
             pass
         elif obj == 'first':
-            self.state.elem_ptr = -1
+            self.state.token_pos = -1
         else:
             raise Exception('Unknown start point %s for object: %s' % obj)
 
         # set the task that will be executed first
         if task == 'prev':
             # the previous
-            self.state.task_pos[-1] -= 1
+            self.state.callback_pos[-1] -= 1
         elif task == 'current':
             # restart the task again
             pass
         elif task == 'next':
             # continue with the next task
-            self.state.task_pos[-1] += 1
+            self.state.callback_pos[-1] += 1
         elif task == 'first':
-            self.state.task_pos = [0]
+            self.state.callback_pos = [0]
         else:
             raise Exception('Unknown start point for task: %s' % obj)
 
@@ -632,16 +632,16 @@ class GenericWorkflowEngine(object):
     @property
     def current_object(self):
         """Return the currently active DbWorkflowObject."""
-        if self.state.elem_ptr < 0:
+        if self.state.token_pos < 0:
             return None
-        return list(self._objects)[self.state.elem_ptr]
+        return list(self._objects)[self.state.token_pos]
 
     @property
     def has_completed(self):
         """Return whether the engine has completed its execution."""
-        if self.state.elem_ptr == -1:
+        if self.state.token_pos == -1:
             return False
-        return len(self._objects) - 1 == self.state.elem_ptr and \
+        return len(self._objects) - 1 == self.state.token_pos and \
             self.state.current_object_processed
 
     @staticmethod
@@ -671,15 +671,15 @@ class GenericWorkflowEngine(object):
     def setPosition(self, token_pos, callback_pos):
         # """Set the internal pointers (of current state/obj).
 
-        # :param elem_ptr: (int) index of the currently processed object
+        # :param token_pos: (int) index of the currently processed object
         #     After invocation, the engine will grab the next obj
         #     from the list
-        # :param task_pos: (list) multidimensional one-element list
+        # :param callback_pos: (list) multidimensional one-element list
         #     that says at which level the task should restart. Example:
         #     6th branch, 2nd task = [5, 1]
         # """
-        self.state.elem_ptr = elem_ptr
-        self.state.task_pos = task_pos
+        self.state.token_pos = token_pos
+        self.state.callback_pos = callback_pos
 
     @deprecated('`getCallbacks` has been replaced with `callbacks.get`')
     def getCallbacks(self, key='*'):
@@ -721,7 +721,7 @@ class GenericWorkflowEngine(object):
     @deprecated('`getCurrObjId` has been replaced with `state.token_pos`')
     def getCurrObjId(self):
         # """Return id of the currently processed object."""
-        return self.state.elem_ptr
+        return self.state.token_pos
 
     @deprecated('`getCurrTaskId` has been replaced with `state.callback_pos`')
     def getCurrTaskId(self):
@@ -729,7 +729,7 @@ class GenericWorkflowEngine(object):
 
         # .. note:: The return value of this method is not thread-safe.
         # """
-        return self.state.task_pos
+        return self.state.callback_pos
 
     @deprecated('`duplicate` has been deprecated in favour of the new '
                 'architecture. Please read the new documentation on extending '
@@ -889,7 +889,7 @@ class TransitionActions(object):
         """Action to take when ContinueNextToken is raised."""
         eng.log.debug("Stop processing for this object, "
                       "continue with next")
-        eng.state.task_pos_reset()
+        eng.state.callback_pos_reset()
         raise Continue
 
     @staticmethod
@@ -897,11 +897,11 @@ class TransitionActions(object):
         """Action to take when JumpToken is raised."""
         step = exc_info[1].args[0]
         if step > 0:
-            eng.state.elem_ptr = min(len(eng._objects), eng.state.elem_ptr - 1 +
+            eng.state.token_pos = min(len(eng._objects), eng.state.token_pos - 1 +
                                      step)
         else:
-            eng.state.elem_ptr = max(-1, eng.state.elem_ptr - 1 + step)
-        eng.state.task_pos_reset()
+            eng.state.token_pos = max(-1, eng.state.token_pos - 1 + step)
+        eng.state.callback_pos_reset()
 
     # From engine_db
     @staticmethod

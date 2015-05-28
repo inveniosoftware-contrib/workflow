@@ -80,23 +80,23 @@ class TestSignals(object):
 
 def TestMachineState(object):
 
-    def test_machine_state_does_not_allow_elem_ptr_below_minus_one(self):
+    def test_machine_state_does_not_allow_token_pos_below_minus_one(self):
         ms = MachineState()
-        ms.elem_ptr = 1
-        ms.elem_ptr = 0
-        ms.elem_ptr = -1
+        ms.token_pos = 1
+        ms.token_pos = 0
+        ms.token_pos = -1
         with pytest.raises(AttributeError):
-            ms.elem_ptr = -2
+            ms.token_pos = -2
 
-    @pytest.mark.parametrize("params, elem_ptr, task_pos", (
+    @pytest.mark.parametrize("params, token_pos, callback_pos", (
         (tuple(),       -1,     [0]),
         ((5, [1, 2]),   5,      [1, 2]),
     ))
-    def test_machine_state_reads_defaults(self, params, elem_ptr, task_pos):
+    def test_machine_state_reads_defaults(self, params, token_pos, callback_pos):
         "Test initialization of machine state with and without args."""
         ms = MachineState(*params)
-        assert ms.elem_ptr == elem_ptr
-        assert ms.task_pos == task_pos
+        assert ms.token_pos == token_pos
+        assert ms.callback_pos == callback_pos
 
 lmb = [
     lambda a: a,

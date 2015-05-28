@@ -211,7 +211,7 @@ class DbTransitionAction(TransitionActions):
     def HaltProcessing(obj, eng, callbacks, exc_info):
         """Action to take when HaltProcessing is raised."""
         e = exc_info[1]
-        obj.save(status=obj.known_statuses.HALTED, task_counter=eng.state.task_pos,
+        obj.save(status=obj.known_statuses.HALTED, task_counter=eng.state.callback_pos,
                  id_workflow=eng.uuid)
         eng.save(status=WorkflowStatus.HALTED)
         message = "Workflow '%s' halted at task %s with message: %s" % \
@@ -229,7 +229,7 @@ class DbTransitionAction(TransitionActions):
         if obj:
             # Sets an error message as a tuple (title, details)
             obj.set_error_message(exception_repr)
-            obj.save(status=obj.known_statuses.ERROR, task_counter=eng.state.task_pos,
+            obj.save(status=obj.known_statuses.ERROR, task_counter=eng.state.callback_pos,
                      id_workflow=eng.uuid)
         eng.save(WorkflowStatus.ERROR)
         traceback.print_exception(*exc_info, file=sys.stderr)
@@ -241,7 +241,7 @@ class DbTransitionAction(TransitionActions):
         raise WorkflowError(
             message=exception_repr,
             id_workflow=eng.uuid,
-            id_object=eng.state.elem_ptr,
+            id_object=eng.state.token_pos,
         )
 
 
