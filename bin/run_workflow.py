@@ -106,10 +106,6 @@ def find_workflow(workflows, name):
 def run_workflow(file_or_module,
                  data=None,
                  engine=None,
-                 processing_factory=None,
-                 callback_chooser=None,
-                 before_processing=None,
-                 after_processing=None,
                  profile=None):
     """Run the workflow
     @var file_or_module: you can pass string (filepath) to the
@@ -131,10 +127,6 @@ def run_workflow(file_or_module,
     @keyword engine: class that should be used to instantiate the
         workflow engine, default=GenericWorkflowEngine
     @group callbacks: standard engine callbacks
-        @keyword processing_factory:
-        @keyword callback_chooser:
-        @keyword before_processing:
-        @keyword after_processing:
     @keyword profile: filepath where to save the profile if we
         are requested to run the workflow in the profiling mode
     @return: workflow engine instance (after its workflow was executed)
@@ -154,22 +146,14 @@ def run_workflow(file_or_module,
         else:
             workflow_def = workflow.workflow
         we = create_workflow_engine(workflow_def,
-                                    engine,
-                                    processing_factory,
-                                    callback_chooser,
-                                    before_processing,
-                                    after_processing)
+                                    engine)
         if data is None:
             data = [{}]
             # there is a separate workflow engine for getting data
             if hasattr(workflow, 'data'):
                 log.info('Running the special data workflow in a separate WFE')
                 datae = create_workflow_engine(workflow.data,
-                                               engine,
-                                               processing_factory,
-                                               callback_chooser,
-                                               before_processing,
-                                               after_processing)
+                                               engine)
                 datae.process(data)
                 if data[0]:  # get prepared data
                     data = data[0]
@@ -182,26 +166,17 @@ def run_workflow(file_or_module,
 
 
 def create_workflow_engine(workflow,
-                           engine=None,
-                           processing_factory=None,
-                           callback_chooser=None,
-                           before_processing=None,
-                           after_processing=None):
+                           engine=None):
     """Instantiate engine and set the workflow and callbacks
     directly
     @var workflow: normal workflow tasks definition
     @keyword engine: class of the engine to create WE
-    @keyword processing_factory: WE callback
-    @keyword callback_chooser: WE callback
-    @keyword before_processing: WE callback
-    @keyword after_processing: WE callback
 
     @return: prepared WE
     """
     if engine is None:
         engine = main_engine.GenericWorkflowEngine
-    wf = engine(processing_factory, callback_chooser,
-                before_processing, after_processing)
+    wf = engine()
     wf.setWorkflow(workflow)
     return wf
 
