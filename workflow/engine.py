@@ -106,15 +106,11 @@ class MachineState(object):
     """
     def __init__(self, elem_ptr=None, task_pos=None):
         """Initialize the state of a Workflow machine."""
-        self.elem_ptr = -1
+        self.reset()
         if elem_ptr is not None:
             self.elem_ptr = elem_ptr
-
-        self.task_pos = [0]
         if task_pos is not None:
             self.task_pos = task_pos
-
-        self.current_object_processed = False
 
     def __setattr__(self, name, value):
         if name == 'elem_ptr' and value < -1:
@@ -134,6 +130,17 @@ class MachineState(object):
     def task_pos_reset(self):
         """Reset `task_pos` to its default value."""
         self.task_pos = [0]
+
+    @staticproperty
+    def _state_keys():  # pylint: disable=no-method-argument
+        return ('elem_ptr', 'task_pos', 'current_object_processed')
+
+    def __getstate__(self):
+        return {key: getattr(self, key) for key in self._state_keys}
+
+    def __setstate__(self, state):
+        for key in self._state_keys:
+            setattr(self, key, state[key])
 
 
 class _CallbacksDict(dict):
@@ -184,21 +191,24 @@ class Callbacks(object):
 
     def add_many(self, list_or_tuple, key='*'):
         """Insert many callable to the stack of thec callables."""
-        list_or_tuple = list(self._cleanUpCallables(list_or_tuple))
+        list_or_tuple = list(self._cleanup_callables(list_or_tuple))
         for f in list_or_tuple:
             self.add(f, key)
 
     @classmethod
-    def _cleanUpCallables(cls, callbacks):
-        """Remove non-callables from the passed-in callbacks."""
+    def _cleanup_callables(cls, callbacks):
+        """Remove non-callables from the passed-in callbacks.
+
+        ..note::
+            Tuples are flattened into normal members. Only lists are nested as
+            expected."""
         if callable(callbacks):
             yield callbacks  # XXX Not tested
         for x in callbacks:
             if isinstance(x, list):
-                yield list(cls._cleanUpCallables(x))
+                yield list(cls._cleanup_callables(x))
             elif isinstance(x, tuple):
-                # tuples are simply converted to normal members
-                for fc in cls._cleanUpCallables(x):
+                for fc in cls._cleanup_callables(x):
                     yield fc
             elif x is not None:
                 yield x
@@ -216,7 +226,7 @@ class Callbacks(object):
 
     def replace(self, funcs, key='*'):
         """Replace processing workflow with a new workflow."""
-        list_or_tuple = list(self._cleanUpCallables(funcs))
+        list_or_tuple = list(self._cleanup_callables(funcs))
         self.clear(key)
         self.add_many(list_or_tuple, key)
 
@@ -225,51 +235,9 @@ class GenericWorkflowEngine(object):
 
     """Workflow engine is a Finite State Machine with memory.
 
-    It is used to execute set of methods in a specified order.
+    Used to execute set of methods in a specified order.
 
-    example:
-
-    .. code-block:: python
-
-        # FIXME:
-        from merkur.workflows.parts import load_annie, load_seman
-        from newseman.general.workflow import patterns as p
-
-        workflow = [
-            load_seman_components.workflow,
-            p.IF(p.OBJ_GET(['path', 'text'], cond='any'), [
-                p.TRY(g.get_annotations(), retry=1,
-                      onfailure=p.ERROR('Error in the annotation workflow'),
-                      verbose=True),
-                p.IF(p.OBJ_GET('xml'),
-                translate_document.workflow)
-            ])
-        ]
-
-    This workflow is then used as:
-
-    .. code-block:: python
-
-        wfe = GenericWorkflowEngine()
-        wfe.setWorkflow(workflow)
-        wfe.process([{'foo': 'bar'}, {'foo': 'baz'}])
-
-    This workflow engine instance can be freezed and restarted, it remembers
-    its internal state and will pick up processing after the last finished
-    task.
-
-    .. code-block:: python
-
-        import pickle
-        s = pickle.dumps(wfe)
-
-    However, when restarting the workflow, you must initialize the workflow
-    tasks manually using their original definition
-
-    .. code-block:: python
-
-        wfe = pickle.loads(s)
-        wfe.setWorkflow(workflow)
+    See `docs/index.rst` for extensive examples.
     """
 
     def __init__(self):
@@ -333,7 +301,6 @@ class GenericWorkflowEngine(object):
 
         :raises: HaltProcessing
         """
-        # FIXME: action is not used anywhere
         raise HaltProcessing(msg, action, **payload)
 
     def break_current_loop(self):
