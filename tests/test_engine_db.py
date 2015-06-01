@@ -82,11 +82,11 @@ class FakeToken(object):
         self._error_message = None
         self._status = None
         self._id_workflow = None  # TODO: Remove this
-        self._task_counter = None
+        self._callback_pos = None
 
-    def save(self, status=None, task_counter=None, id_workflow=None):
+    def save(self, status=None, callback_pos=None, id_workflow=None):
         self._status = status
-        self._task_counter = task_counter
+        self._callback_pos = callback_pos
         self._id_workflow = id_workflow
 
     def set_error_message(self, msg):

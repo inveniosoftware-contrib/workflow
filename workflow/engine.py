@@ -105,7 +105,11 @@ class MachineState(object):
         the task finished running.
     """
     def __init__(self, token_pos=None, callback_pos=None):
-        """Initialize the state of a Workflow machine."""
+        """Initialize the state of a Workflow machine.
+
+        :type token_pos: int
+        :type callback_pos: list
+        """
         self.reset()
         if token_pos is not None:
             self.token_pos = token_pos
@@ -139,6 +143,9 @@ class MachineState(object):
         return {key: getattr(self, key) for key in self._state_keys}
 
     def __setstate__(self, state):
+        """
+        :type state: dict
+        """
         for key in self._state_keys:
             setattr(self, key, state[key])
 
@@ -147,6 +154,9 @@ class _CallbacksDict(dict):
     """dict with informative KeyError for our use-case."""
 
     def __getitem__(self, key):
+        """
+        :type key: str
+        """
         try:
             return dict.__getitem__(self, key)
         except KeyError as e:
@@ -173,6 +183,8 @@ class Callbacks(object):
 
         :param key: name of the workflow (default: '*') if you want to get all
             configured workflows pass None object as a key
+        :type key: str
+
         :return: list of callbacks
         """
         if key:
@@ -181,7 +193,9 @@ class Callbacks(object):
             return self._dict
 
     def add(self, func, key='*'):
-        """Insert one callable to the stack of the callables."""
+        """Insert one callable to the stack of the callables.
+        :type key: str
+        """
         try:
             if func:  # can be None
                 self.get(key).append(func)

@@ -229,7 +229,7 @@ class DbTransitionAction(TransitionActions):
         if obj:
             # Sets an error message as a tuple (title, details)
             obj.set_error_message(exception_repr)
-            obj.save(status=obj.known_statuses.ERROR, task_counter=eng.state.callback_pos,
+            obj.save(status=obj.known_statuses.ERROR, callback_pos=eng.state.callback_pos,
                      id_workflow=eng.uuid)
         eng.save(WorkflowStatus.ERROR)
         traceback.print_exception(*exc_info, file=sys.stderr)
