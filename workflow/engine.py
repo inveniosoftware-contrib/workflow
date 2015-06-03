@@ -299,7 +299,7 @@ class GenericWorkflowEngine(object):
         """Break out, stop everything (in the current `wfe`)."""
         raise StopProcessing
 
-    def halt(self, msg="", action=None, **payload):
+    def halt(self, msg="", action=None, payload=None):
         """Halt the workflow (stop also any parent `wfe`).
 
         Halts the currently running workflow by raising HaltProcessing.
@@ -315,7 +315,7 @@ class GenericWorkflowEngine(object):
 
         :raises: HaltProcessing
         """
-        raise HaltProcessing(msg, action, **payload)
+        raise HaltProcessing(msg, action, payload)
 
     def break_current_loop(self):
         """Break out of the current callbacks loop."""

@@ -69,7 +69,7 @@ class HaltProcessing(WorkflowTransition):  # Used to be WorkflowHalt
 
     Also contains the widget and other information to be displayed.
     """
-    def __init__(self, message="", action=None, **payload):
+    def __init__(self, message="", action=None, payload=None):
         """Instanciate a HaltProcessing object."""
         super(HaltProcessing, self).__init__()
         self.message = message
@@ -116,25 +116,25 @@ class BreakFromThisLoop(WorkflowTransition):
     """Break from this loop, but do not stop processing."""
 
 
-@with_str(('message', ('payload',)))
+@with_str(('message', ('id_workflow', 'id_object', 'payload')))
 class WorkflowError(Exception):
     """Raised when workflow experiences an error."""
 
-    def __init__(self, message, **payload):
+    def __init__(self, message, id_workflow=None, id_object=None, payload=None):
         """Instanciate a WorkflowError object."""
         self.message = message
-        # self.id_workflow = id_workflow
-        # self.id_object = id_object
+        self.id_workflow = id_workflow
+        self.id_object = id_object
         self.payload = payload
         # Needed for passing an exception through message queue
-        super(WorkflowError, self).__init__(message, payload)
+        super(WorkflowError, self).__init__(message)
 
 
 @with_str(('message', ('workflow_name', 'payload')))
 class WorkflowDefinitionError(Exception):
     """Raised when workflow definition is missing."""
 
-    def __init__(self, message, workflow_name, **payload):
+    def __init__(self, message, workflow_name, payload=None):
         """Instanciate a WorkflowDefinitionError object."""
         self.message = message
         self.workflow_name = workflow_name
