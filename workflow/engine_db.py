@@ -14,6 +14,7 @@ from __future__ import absolute_import
 import traceback
 from enum import Enum
 
+from six import reraise
 from six.moves import cPickle
 from .engine import (
     GenericWorkflowEngine,
@@ -232,17 +233,14 @@ class DbTransitionAction(TransitionActions):
             obj.save(status=obj.known_statuses.ERROR, callback_pos=eng.state.callback_pos,
                      id_workflow=eng.uuid)
         eng.save(WorkflowStatus.ERROR)
-        traceback.print_exception(*exc_info, file=sys.stderr)
         try:
             super(DbTransitionAction, DbTransitionAction).Exception(obj, eng, callbacks, exc_info)
         except Exception:
             # We expect this to reraise
             pass
-        raise WorkflowError(
-            message=exception_repr,
-            id_workflow=eng.uuid,
-            id_object=eng.state.token_pos,
-        )
+        # Change the type of the Exception to WorkflowError, but use its tb
+        reraise(WorkflowError(message=exception_repr, id_workflow=eng.uuid,
+                              id_object=eng.state.token_pos), None, exc_info[2])
 
 
 class DbProcessingFactory(ProcessingFactory):
