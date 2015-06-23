@@ -883,8 +883,8 @@ class TransitionActions(object):
     @staticmethod
     def StopProcessing(obj, eng, callbacks, exc_info):
         """Gracefully stop the execution of the engine."""
-        eng.log.debug("Processing was stopped: '%s' (object: %s)" % (
-            str(eng._callbacks), repr(obj)))
+        msg = "Processing was stopped for object: {0}".format(obj)
+        eng.log.debug(msg)
         raise Break
 
     @staticmethod
@@ -921,20 +921,16 @@ class TransitionActions(object):
     @staticmethod
     def SkipToken(obj, eng, callbacks, exc_info):
         """Action to take when SkipToken is raised."""
-        msg = "Skipped running this object: '%s' (object: %s)" % \
-            (str(callbacks), repr(obj))
+        msg = "Skipped running this object: {0}".format(obj)
         eng.log.debug(msg)
-        obj.log.debug(msg)
         raise Continue
 
     # From engine_db
     @staticmethod
     def AbortProcessing(obj, eng, callbacks, exc_info):
         """Action to take when AbortProcessing is raised."""
-        msg = "Processing was aborted: '%s' (object: %s)" % \
-            (str(callbacks), repr(obj))
+        msg = "Processing was aborted for object: {0}".format(obj)
         eng.log.debug(msg)
-        obj.log.debug(msg)
         raise Break
 
     @staticmethod

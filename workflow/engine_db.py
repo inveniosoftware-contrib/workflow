@@ -191,24 +191,6 @@ class DbTransitionAction(TransitionActions):
         save it, save the engine, log a message and finally call `super`.
     """
     @staticmethod
-    def SkipToken(obj, eng, callbacks, e):
-        """Action to take when SkipToken is raised."""
-        msg = "Skipped running this object: '%s' (object: %s)" % \
-            (str(callbacks), repr(obj))
-        eng.log.debug(msg)
-        obj.log.debug(msg)
-        raise Continue
-
-    @staticmethod
-    def AbortProcessing(obj, eng, callbacks, e):
-        """Action to take when AbortProcessing is raised."""
-        msg = "Processing was aborted: '%s' (object: %s)" % \
-            (str(callbacks), repr(obj))
-        eng.log.debug(msg)
-        obj.log.debug(msg)
-        raise Break
-
-    @staticmethod
     def HaltProcessing(obj, eng, callbacks, exc_info):
         """Action to take when HaltProcessing is raised."""
         e = exc_info[1]
