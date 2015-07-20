@@ -12,6 +12,7 @@
 import os
 import re
 import sys
+import platform
 
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
@@ -52,11 +53,13 @@ tests_require = [
     'blinker==1.3',
 ]
 
-install_requires=[
+install_requires = [
     'configobj>4.7.0',
-    'enum34>=1.0.4',
     'six',
 ]
+
+if platform.python_version_tuple() < ('3', '4'):
+    install_requires.append('enum34>=1.0.4')
 
 setup(
     name='workflow',

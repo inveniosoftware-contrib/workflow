@@ -10,7 +10,7 @@
 
 """Contains standard error messages for workflows module."""
 
-
+import sys
 from functools import wraps, partial
 from types import MethodType
 
@@ -52,7 +52,10 @@ def with_str(args):
                 real_args=real_args,
                 real_kwargs=', '.join(('{k}={v}'.format(k=key, v=val)
                                        for key, val in real_kwargs.items())))
-        Klass.__str__ = MethodType(partial(__str__, args), None, Klass)
+        if sys.version_info >= (3, ):
+            Klass.__str__ = MethodType(partial(__str__, args), Klass)
+        else:
+            Klass.__str__ = MethodType(partial(__str__, args), None, Klass)
         return Klass
     return wrapper
 

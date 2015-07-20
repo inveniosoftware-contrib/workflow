@@ -177,10 +177,11 @@ class TestWorkflowEngine(object):
         ]
         self.wfe.callbacks.replace(workflow, self.key)
         # This test will break if someone changes IF_ELSE. TODO: Mock
-        assert re.match(r'\[<function IF_ELSE at 0x[0-f]+>, '
-                        r'\[<function <lambda> at 0x[0-f]+>\], '
-                        r'<function BREAK at 0x[0-f]+>, '
-                        r'\[<function <lambda> at 0x[0-f]+>\]\]',
+        # Note: Python3 has much stronger introspection, thus the `.*`.
+        assert re.match(r'\[<function IF_ELSE.* at 0x[0-f]+>, '
+                        r'\[<function .*<lambda> at 0x[0-f]+>\], '
+                        r'<function BREAK.* at 0x[0-f]+>, '
+                        r'\[<function .*<lambda> at 0x[0-f]+>\]\]',
                         self.wfe.current_taskname)
 
     def test_current_object_returns_correct_object(self):

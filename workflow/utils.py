@@ -55,7 +55,7 @@ class dictproperty(object):
 
 def get_func_info(func):
     """Retrieve a function's information."""
-    name = func.func_name
+    name = func.__name__
     doc = func.func_doc
     try:
         nicename = func.description

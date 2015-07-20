@@ -498,12 +498,12 @@ def _get_mod_func(func):
     """for a given callable finds its module - imports it
     and returns module, call -- module can be reloaded"""
     # find out module of this call
-    def get_mod(modid, func_name):
+    def get_mod(modid, __name__):
         mod = __import__(modid)
         components = modid.split('.')
         for comp in components[1:]:
             mod = getattr(mod, comp)
-        return getattr(mod, func_name), mod
+        return getattr(mod, __name__), mod
 
     if callable(func):
         m = func.__module__

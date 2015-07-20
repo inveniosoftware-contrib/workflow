@@ -7,19 +7,20 @@
 # under the terms of the Revised BSD License; see LICENSE file for
 # more details.
 
-import sys
 import os
+import sys
 from copy import deepcopy
+
 import mock
 import pytest
-from workflow.engine import MachineState
-from workflow.engine import Callbacks
+from six import iteritems
+
+from workflow.engine import MachineState, Callbacks, GenericWorkflowEngine
+
 
 p = os.path.abspath(os.path.dirname(__file__) + '/../')
 if p not in sys.path:
     sys.path.append(p)
-
-from workflow.engine import GenericWorkflowEngine
 
 
 def obj_append(key):
@@ -46,6 +47,8 @@ class TestSignals(object):
         'workflow_halted',
         'workflow_finished',
     ))
+    @pytest.mark.skipif(sys.version_info > (3, ),
+                        reason="create_autospec broken in py3")
     def test_signals_are_emitted(self, signal_name):
         from workflow.engine import Signal
         from workflow import signals
@@ -72,7 +75,11 @@ class TestSignals(object):
         with mock.patch('workflow.engine.GenericWorkflowEngine') as patched_GWE:
             eng = patched_GWE.return_value
         # Patch __import__ so that importing workflow.signals raises ImportError
-        with mock.patch('__builtin__.__import__', side_effect=import_mock):
+        if sys.version_info < (3, ):
+            builtins_module = '__builtin__'
+        else:
+            builtins_module = 'builtins'
+        with mock.patch(builtins_module + '.__import__', side_effect=import_mock):
             Signal.workflow_started(eng)
         eng.log.warning.assert_called_once_with("Could not import signals lib; "
                                                 "ignoring all future signal calls.")
@@ -141,10 +148,10 @@ class TestCallbacks(object):
     ))
     def test_callbacks_get_return_correct_after_add_many(self, cbs, in_dict, ret):
         # Run `add_many`
-        for key, val in in_dict.iteritems():
+        for key, val in iteritems(in_dict):
             cbs.add_many(val, key)
         # Existing keys
-        for key, val in ret.iteritems():
+        for key, val in iteritems(ret):
             assert cbs.get(key) == val
 
     def test_callbacks_replace_from_used(self, cbs):

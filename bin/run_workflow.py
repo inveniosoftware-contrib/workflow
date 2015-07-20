@@ -242,7 +242,7 @@ class TalkativeWorkflowEngine(main_engine.GenericWorkflowEngine):
 
         def func_format(c):
             return '<%s ...%s:%s>' % (
-                c.func_name,
+                c.__name__,
                 c.func_code.co_filename[-max_len:],
                 c.func_code.co_firstlineno)
         if isinstance(obj, dict):

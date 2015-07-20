@@ -559,7 +559,7 @@ class GenericWorkflowEngine(object):
                 # The final value is not a function, but a list.value
                 # We currently then just take the __str__ of that list.
                 return str(callback_list)
-            return callback_list.func_name
+            return callback_list.__name__
 
     def restart(self, obj, task, objects=None, stop_on_error=True,
                 stop_on_halt=True):
