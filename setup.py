@@ -52,6 +52,12 @@ tests_require = [
     'blinker==1.3',
 ]
 
+install_requires=[
+    'configobj>4.7.0',
+    'enum34>=1.0.4',
+    'six',
+]
+
 setup(
     name='workflow',
     packages=['workflow', 'workflow.patterns'],
@@ -84,10 +90,6 @@ setup(
     },
     tests_require=tests_require,
     cmdclass={'test': PyTest},
-    install_requires=[
-        'configobj>4.7.0',
-        'enum34>=1.0.4',
-        'six',
-    ],
+    install_requires=install_requires,
     long_description=open('README.rst').read(),
 )

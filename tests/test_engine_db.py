@@ -6,42 +6,26 @@
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
 # more details.
-
 import os
 import sys
-import mock
-
-import pytest
-
-import re
-
-from collections import OrderedDict
-from workflow.patterns.controlflow import IF_ELSE
-from workflow.engine import (
-    Callbacks,
-    GenericWorkflowEngine,
-    HaltProcessing,
-    TransitionActions,
-)
-from workflow.errors import WorkflowError, HaltProcessing
-from workflow.utils import staticproperty
 from collections import Iterable
 
-from workflow.utils import staticproperty
+import mock
+import pytest
+
+from workflow.engine import HaltProcessing, TransitionActions
 from workflow.engine_db import (
     DbWorkflowEngine,
     ObjectStatus,
     WorkflowStatus,
     DbProcessingFactory,
 )
+from workflow.utils import staticproperty
 
 
 p = os.path.abspath(os.path.dirname(__file__) + '/../')
 if p not in sys.path:
     sys.path.append(p)
-
-from workflow.tasks.sample_tasks import (add_data, halt_if_data_less_than,
-                                         reduce_data_by_one)
 
 
 class DummyDbObj(object):

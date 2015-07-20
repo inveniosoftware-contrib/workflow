@@ -140,7 +140,10 @@ class MachineState(object):
         return ('token_pos', 'callback_pos', 'current_object_processed')
 
     def __getstate__(self):
-        return {key: getattr(self, key) for key in self._state_keys}
+        state = {}
+        for key in self._state_keys:
+            state[key] = getattr(self, key)
+        return state
 
     def __setstate__(self, state):
         """

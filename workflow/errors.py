@@ -42,7 +42,9 @@ def with_str(args):
             """String representation."""
             real_args = getattr(self, args[0])
             try:
-                real_kwargs = {key: getattr(self, key) for key in args[1]}
+                real_kwargs = {}
+                for key in args[1]:
+                    real_kwargs[key] = getattr(self, key)
             except IndexError:
                 real_kwargs = {}
             return "{class_name}({real_args}, {real_kwargs})".format(
