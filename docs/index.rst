@@ -352,7 +352,7 @@ start by creating a couple of SQLAlchemy schemas:
     * and one where a single grade (a grade will be the grade of a single test)
 
 Note that the `Workflow` model below can store an element pointer. This pointer
-(found at `engine.state.elem_ptr`) indicates the object that is currently being
+(found at `engine.state.token_pos`) indicates the object that is currently being
 processed and saving it is crucial so that the engine can resume at a later
 time from that point.
 
@@ -372,15 +372,21 @@ time from that point.
     class Workflow(Base):
         __tablename__ = 'workflow'
         id = Column(Integer, primary_key=True)
-        state_elem_ptr = Column(Integer, default=-1)
+        state_token_pos = Column(Integer, default=-1)
         grades = relationship('Grade', backref='workflow',
                                cascade="all, delete, delete-orphan")
 
-        def save(self, elem_ptr):
+        def save(self, token_pos):
             """Save object to persistent storage."""
-            self.state_elem_ptr = elem_ptr
-            session.add(self)
-            session.commit()
+            self.state_token_pos = token_pos
+            session.begin(subtransactions=True)
+            try:
+                session.add(self)
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
+
 
 
     class Grade(Base):
@@ -449,27 +455,27 @@ it occurs. Once again, follow the comments carefully to understand the code.
     class MyDbWorkflowEngine(DbWorkflowEngine):
 
         def __init__(self, db_obj):
-            """Load an old `elem_ptr` from the db into the engine."""
+            """Load an old `token_pos` from the db into the engine."""
 
-            # The reason we save elem_ptr _first_, is because calling `super`
+            # The reason we save token_pos _first_, is because calling `super`
             # will reset.
-            elem_ptr = db_obj.state_elem_ptr
+            token_pos = db_obj.state_token_pos
 
             self.db_obj = db_obj
             super(DbWorkflowEngine, self).__init__()
 
             # And now we inject it back into the engine's `state`.
-            if elem_ptr is not None:
-                self.state.elem_ptr = elem_ptr
+            if token_pos is not None:
+                self.state.token_pos = token_pos
             self.save()
 
-        # For this example we are interested in saving `elem_ptr` as explained
+        # For this example we are interested in saving `token_pos` as explained
         # previously, so we override `save` to do that.
-        def save(self, elem_ptr=None):
+        def save(self, token_pos=None):
             """Save the state of the workflow."""
-            if elem_ptr is not None:
-                self.state.elem_ptr = elem_ptr
-            self.db_obj.save(self.state.elem_ptr)
+            if token_pos is not None:
+                self.state.token_pos = token_pos
+            self.db_obj.save(self.state.token_pos)
 
         # We want our own processing factory, so we tell the engine that we
         # have subclassed it below.

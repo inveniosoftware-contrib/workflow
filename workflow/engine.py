@@ -43,6 +43,7 @@ LOG = None
 
 
 class _Signal(object):
+    """Helper for storing signal callers."""
 
     def __init__(self):
         self.errored_global = False
@@ -59,26 +60,29 @@ class _Signal(object):
                 eng.log.warning(import_error_msg)
                 self.errored_engine = True
             elif not eng and not self.errored_global:
-                import logging
                 logging.warning(import_error_msg)
                 self.errored_global = True
 
     def workflow_halted(self, eng, *args, **kwargs):
+        """Call the `workflow_halted` signal if signals is installed."""
         signals = self.signals(eng)
         if signals:
             signals.workflow_halted.send(*args, **kwargs)
 
     def workflow_error(self, eng, *args, **kwargs):
+        """Call the `workflow_error` signal if signals is installed."""
         signals = self.signals(eng)
         if signals:
             signals.workflow_error.send(*args, **kwargs)
 
     def workflow_started(self, eng, *args, **kwargs):
+        """Call the `workflow_started` signal if signals is installed."""
         signals = self.signals(eng)
         if signals:
             signals.workflow_started.send(*args, **kwargs)
 
     def workflow_finished(self, eng, *args, **kwargs):
+        """Call the `workflow_finished` signal if signals is installed."""
         signals = self.signals(eng)
         if signals:
             signals.workflow_finished.send(*args, **kwargs)
@@ -137,6 +141,7 @@ class MachineState(object):
 
     @staticproperty
     def _state_keys():  # pylint: disable=no-method-argument
+        """Return the known state keys for serializing the instance."""
         return ('token_pos', 'callback_pos', 'current_object_processed')
 
     def __getstate__(self):
