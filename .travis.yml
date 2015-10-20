@@ -14,9 +14,9 @@ python:
   - "3.4"
 
 install:
-  - pip install --upgrade pip  --use-mirrors
-  - pip install pytest pytest-pep8 pytest-cov pytest-cache --use-mirrors
-  - pip install coveralls --use-mirrors
+  - pip install --upgrade pip
+  - pip install pytest pytest-pep8 pytest-cov pytest-cache
+  - pip install coveralls
   - pip install -e .[docs]
 
 script:
