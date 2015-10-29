@@ -225,7 +225,7 @@ class TestGenericWorkflowEngine(object):
         we.process(doc)
 
         # give threads time to finish
-        time.sleep(.5)
+        time.sleep(2)
 
         assert doc[0][0] == 'start'
         assert doc[0][1] == 'one'
