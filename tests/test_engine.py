@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2014, 2015 CERN.
+# Copyright (C) 2014, 2015, 2016 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
@@ -356,9 +356,9 @@ class TestWorkflowEngine(object):
         ], self.key)
         self.wfe.process(self.tokens)
         t = get_first(self.tokens)
-        assert get_xth(self.tokens, 0) == None
-        assert get_xth(self.tokens, 1) == None
-        assert get_xth(self.tokens, 2) == None
+        assert get_xth(self.tokens, 0) is None
+        assert get_xth(self.tokens, 1) is None
+        assert get_xth(self.tokens, 2) is None
 
     def test_engine_stops_half_way_through(self):
         self.wfe.callbacks.add_many([
@@ -456,8 +456,8 @@ class TestWorkflowEngine(object):
 
         t = get_first(self.tokens)
         assert get_xth(self.tokens, 0) == 'mouse dog cat puppy python'
-        assert get_xth(self.tokens, 1) == None
-        assert get_xth(self.tokens, 2) == None
+        assert get_xth(self.tokens, 1) is None
+        assert get_xth(self.tokens, 2) is None
 
     compl = 'mouse dog cat puppy python horse'
     compl1 = 'mouse dog cat puppy python'
@@ -497,8 +497,8 @@ class TestWorkflowEngine(object):
             self.wfe.process(self.tokens)
 
         assert get_xth(self.tokens, 0) == 'mouse dog cat puppy python'
-        assert get_xth(self.tokens, 1) == None
-        assert get_xth(self.tokens, 2) == None
+        assert get_xth(self.tokens, 1) is None
+        assert get_xth(self.tokens, 2) is None
 
         # this should pick up from the point where we stopped
         with pytest.raises(HaltProcessing):
@@ -506,7 +506,7 @@ class TestWorkflowEngine(object):
 
         assert get_xth(self.tokens, 0) == 'mouse dog cat puppy python horse'
         assert get_xth(self.tokens, 1) == 'mouse dog cat puppy python'
-        assert get_xth(self.tokens, 2) == None
+        assert get_xth(self.tokens, 2) is None
 
         with pytest.raises(HaltProcessing):
             self.wfe.restart(obj, task)
@@ -568,8 +568,8 @@ class TestWorkflowEngine(object):
 
         t = get_first(self.tokens)
         assert get_xth(self.tokens, 0) == 'mouse dog cat puppy python mouse dog cat puppy python'
-        assert get_xth(self.tokens, 1) == None
-        assert get_xth(self.tokens, 2) == None
+        assert get_xth(self.tokens, 1) is None
+        assert get_xth(self.tokens, 2) is None
 
     @pytest.mark.parametrize("callbacks,kwargs,result,exception", (
         (

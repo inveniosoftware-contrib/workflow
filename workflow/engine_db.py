@@ -198,10 +198,9 @@ class DbTransitionAction(TransitionActions):
                  id_workflow=eng.uuid)
         eng.save(status=WorkflowStatus.HALTED)
         message = "Workflow '%s' halted at task %s with message: %s" % \
-                    (eng.name, eng.current_taskname or "Unknown", e.message)
+                  (eng.name, eng.current_taskname or "Unknown", e.message)
         eng.log.warning(message)
         super(DbTransitionAction, DbTransitionAction).HaltProcessing(obj, eng, callbacks, exc_info)
-
 
     @staticmethod
     def Exception(obj, eng, callbacks, exc_info):
@@ -223,6 +222,7 @@ class DbTransitionAction(TransitionActions):
         # Change the type of the Exception to WorkflowError, but use its tb
         reraise(WorkflowError(message=exception_repr, id_workflow=eng.uuid,
                               id_object=eng.state.token_pos), None, exc_info[2])
+
 
 
 class DbProcessingFactory(ProcessingFactory):

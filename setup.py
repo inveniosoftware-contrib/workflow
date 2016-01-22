@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2011, 2014, 2015 CERN.
+# Copyright (C) 2011, 2014, 2015, 2016 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
@@ -48,8 +48,8 @@ tests_require = [
     'pytest-cache>=1.0',
     'pytest-cov>=1.8.0',
     'pytest-pep8>=1.0.6',
+    'mock>=1.0.0',
     'pytest>=2.6.1',
-    'mock==1.0.1',
     'blinker==1.3',
 ]
 
@@ -90,6 +90,7 @@ setup(
     ],
     extras_require={
         "docs": ["sphinx", "sphinx_rtd_theme"],
+        "tests": tests_require,
     },
     tests_require=tests_require,
     cmdclass={'test': PyTest},
