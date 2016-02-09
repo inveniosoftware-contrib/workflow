@@ -55,7 +55,7 @@ Basic use is comprised of the following steps:
         @wraps(add_data)
         def _add_data(obj, eng):
             obj.data += number_to_add
-    return _add_data
+        return _add_data
 
 
 2. Create a **workflow definition** (also known as **callbacks**). This is a
@@ -244,7 +244,7 @@ Because our workflow interrupts itself, we will wrap the call to `process` and
             except HaltProcessing:
                 continue
             else:
-                print "Done!", list(my_engine.objects)
+                print "Done!", my_engine.objects
                 break
 
 Here is what the execution prints::

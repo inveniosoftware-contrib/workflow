@@ -1,39 +1,37 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2011, 2012, 2014, 2015 CERN.
+# Copyright (C) 2011, 2012, 2014, 2015, 2016 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
 # more details.
 
-
 """The workflow engine extension of GenericWorkflowEngine."""
+
 from __future__ import absolute_import
 
 import traceback
+
 from enum import Enum
 
 from six import reraise
-from six.moves import cPickle
+
 from .engine import (
     GenericWorkflowEngine,
     TransitionActions,
     ProcessingFactory,
-    Break,
-    Continue,
 )
-from .deprecation import deprecated
 from .errors import WorkflowError
-from .utils import staticproperty
+from .utils import classproperty
 
 
 class EnumLabel(Enum):
     def __init__(self, label):
         self.label = self.labels[label]
 
-    @staticproperty
-    def labels():  # pylint: disable=no-method-argument
+    @classproperty
+    def labels(cls):
         raise NotImplementedError
 
 
@@ -46,8 +44,8 @@ class WorkflowStatus(EnumLabel):
     ERROR = 3
     COMPLETED = 4
 
-    @staticproperty
-    def labels():  # pylint: disable=no-method-argument
+    @classproperty
+    def labels(cls):
         return {
             0: "New",
             1: "Running",
@@ -66,8 +64,8 @@ class ObjectStatus(EnumLabel):
     RUNNING = 3
     ERROR = 4
 
-    @staticproperty
-    def labels():  # pylint: disable=no-method-argument
+    @classproperty
+    def labels(cls):
         return {
             0: "New",
             1: "Done",
@@ -112,17 +110,15 @@ class DbWorkflowEngine(GenericWorkflowEngine):
         # must have saved at least once before calling `__init__`.
         super(DbWorkflowEngine, self).__init__()
 
-    @staticproperty
-    def processing_factory():  # pylint: disable=no-method-argument
+    @classproperty
+    def processing_factory(cls):
         """Provide a proccessing factory."""
         return DbProcessingFactory
 
-    @staticproperty
-    def known_statuses():  # pylint: disable=no-method-argument
+    @classproperty
+    def known_statuses(cls):
         return WorkflowStatus
 
-    ############################################################################
-    #                                                                          #
     @property
     def name(self):
         """Return the name."""
@@ -138,7 +134,6 @@ class DbWorkflowEngine(GenericWorkflowEngine):
         """Return the status."""
         return self.db_obj.uuid
 
-    # XXX renamed recently from 'objects'
     @property
     def database_objects(self):
         """Return the objects associated with this workflow."""
@@ -224,12 +219,11 @@ class DbTransitionAction(TransitionActions):
                               id_object=eng.state.token_pos), None, exc_info[2])
 
 
-
 class DbProcessingFactory(ProcessingFactory):
     """Processing factory for persistence requirements."""
 
-    @staticproperty
-    def transition_exception_mapper():  # pylint: disable=no-method-argument
+    @classproperty
+    def transition_exception_mapper(cls):
         """Define our for handling transition exceptions."""
         return DbTransitionAction
 

@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2015, 2016 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
 # more details.
+
 import os
 import sys
+
 from collections import Iterable
 
 import mock
@@ -20,7 +22,7 @@ from workflow.engine_db import (
     WorkflowStatus,
     DbProcessingFactory,
 )
-from workflow.utils import staticproperty
+from workflow.utils import classproperty
 
 
 p = os.path.abspath(os.path.dirname(__file__) + '/../')
@@ -76,8 +78,8 @@ class FakeToken(object):
     def set_error_message(self, msg):
         self._error_message = msg
 
-    @staticproperty
-    def known_statuses():  # pylint: disable=no-method-argument
+    @classproperty
+    def known_statuses(cls):
         return ObjectStatus
 
 

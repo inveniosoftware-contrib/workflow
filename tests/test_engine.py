@@ -525,7 +525,7 @@ class TestWorkflowEngine(object):
 
         self.wfe.restart('first', 'first', objects=new_tokens)
 
-        assert list(self.wfe.objects) == new_tokens
+        assert self.wfe.objects == new_tokens
 
     def test_has_completed(self):
         self.wfe.callbacks.replace([
@@ -627,5 +627,5 @@ class TestWorkflowEngine(object):
                 self.wfe.process(self.tokens, **kwargs)
         else:
             self.wfe.process(self.tokens, **kwargs)
-            for idx in range(len(self.tokens)):
+            for idx, dummy in enumerate(self.tokens):
                 assert get_xth(self.tokens, idx) == result

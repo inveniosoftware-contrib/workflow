@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2011, 2012, 2014, 2015 CERN.
+# Copyright (C) 2011, 2012, 2014, 2015, 2016 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
 # more details.
 
 """Define workflow engines and exceptions."""
-# we are not using the newseman logging to make this library independent
+
 import logging
 import sys
 from collections import (
@@ -36,7 +36,7 @@ from .errors import (
     WorkflowError,
     AbortProcessing,  # From engine_db
 )
-from .utils import staticproperty
+from .utils import classproperty
 
 LOGGING_LEVEL = logging.NOTSET
 LOG = None
@@ -139,8 +139,8 @@ class MachineState(object):
         """Reset `callback_pos` to its default value."""
         self.callback_pos = [0]
 
-    @staticproperty
-    def _state_keys():  # pylint: disable=no-method-argument
+    @classproperty
+    def _state_keys(cls):
         """Return the known state keys for serializing the instance."""
         return ('token_pos', 'callback_pos', 'current_object_processed')
 
@@ -213,12 +213,12 @@ class Callbacks(object):
 
     def add_many(self, list_or_tuple, key='*'):
         """Insert many callable to the stack of thec callables."""
-        list_or_tuple = list(self._cleanup_callables(list_or_tuple))
+        list_or_tuple = list(self.cleanup_callables(list_or_tuple))
         for f in list_or_tuple:
             self.add(f, key)
 
     @classmethod
-    def _cleanup_callables(cls, callbacks):
+    def cleanup_callables(cls, callbacks):
         """Remove non-callables from the passed-in callbacks.
 
         ..note::
@@ -228,27 +228,29 @@ class Callbacks(object):
             yield callbacks  # XXX Not tested
         for x in callbacks:
             if isinstance(x, list):
-                yield list(cls._cleanup_callables(x))
+                yield list(cls.cleanup_callables(x))
             elif isinstance(x, tuple):
-                for fc in cls._cleanup_callables(x):
+                for fc in cls.cleanup_callables(x):
                     yield fc
             elif x is not None:
                 yield x
 
     def clear(self, key='*'):
         """Remove tasks from the workflow engine instance, or all if no `key`."""
-        try:
+        if key in self._dict:
             del self._dict[key]
-        except KeyError:
-            pass
 
     def clear_all(self):
         """Remove tasks from the workflow engine instance, or all if no `key`."""
         self._dict.clear()
 
+    def empty(self):
+        """Is it empty?"""
+        return len(self._dict) == 0
+
     def replace(self, funcs, key='*'):
         """Replace processing workflow with a new workflow."""
-        list_or_tuple = list(self._cleanup_callables(funcs))
+        list_or_tuple = list(self.cleanup_callables(funcs))
         self.clear(key)
         self.add_many(list_or_tuple, key)
 
@@ -264,29 +266,23 @@ class GenericWorkflowEngine(object):
 
     def __init__(self):
         """Initialize workflow."""
-        self._callbacks = Callbacks()
-        self._objects = []
+        self.callbacks = Callbacks()
+        self.objects = []
         self.log = self.init_logger()
-        self._state = MachineState()
+        self.state = MachineState()
         self.extra_data = {}
 
-    @property
-    def callbacks(self):
-        """Return the current callbacks implementation."""
-        return self._callbacks
+    def __len__(self):
+        """Return number of active objects in engine."""
+        return len(self.objects)
 
-    @property
-    def state(self):
-        """Return the current state implementation."""
-        return self._state
-
-    @staticproperty
-    def signal():  # pylint: disable=no-method-argument
+    @classproperty
+    def signal(cls):
         """Return the signal handler."""
         return Signal
 
-    @staticproperty
-    def processing_factory():  # pylint: disable=no-method-argument
+    @classproperty
+    def processing_factory(cls):
         """Return the processing factory."""
         return ProcessingFactory
 
@@ -323,7 +319,7 @@ class GenericWorkflowEngine(object):
 
         :raises: HaltProcessing
         """
-        raise HaltProcessing(msg, action, payload)
+        raise HaltProcessing(msg, action=action, payload=payload)
 
     def break_current_loop(self):
         """Break out of the current callbacks loop."""
@@ -366,9 +362,8 @@ class GenericWorkflowEngine(object):
             self.log.warning('List of objects is empty. Running workflow '
                              'on empty set has no effect.')
         # Check that callbacks are populated
-        if not self.callbacks._dict:
+        if self.callbacks.empty():
             raise WorkflowError("The callbacks are empty, did you set them?")
-
 
     def process(self, objects, stop_on_error=True, stop_on_halt=True,
                 initial_run=True, reset_state=True):
@@ -405,7 +400,6 @@ class GenericWorkflowEngine(object):
                 if stop_on_error:
                     raise
 
-    # XXX: No longer static
     def callback_chooser(self, obj):
         """Choose proper callback method.
 
@@ -604,9 +598,7 @@ class GenericWorkflowEngine(object):
         if objects:
             new_objects = objects
         else:
-            new_objects = self._objects
-
-        self._pre_flight_checks(new_objects)
+            new_objects = self.objects
 
         self.log.debug("Restarting workflow from {0} object and {1} task"
                        .format(str(obj), str(task)))
@@ -644,26 +636,20 @@ class GenericWorkflowEngine(object):
         self.process(new_objects, stop_on_error=stop_on_error,
                      stop_on_halt=stop_on_halt, reset_state=False)
 
-    # XXX Now a property
-    # XXX Now returns only active objects
-    @property
-    def objects(self):
-        """Return iterator for walking through the objects."""
-        return (obj for obj in self._objects)
 
     @property
     def current_object(self):
         """Return the currently active DbWorkflowObject."""
         if self.state.token_pos < 0:
             return None
-        return list(self._objects)[self.state.token_pos]
+        return list(self.objects)[self.state.token_pos]
 
     @property
     def has_completed(self):
         """Return whether the engine has completed its execution."""
         if self.state.token_pos == -1:
             return False
-        return len(self._objects) - 1 == self.state.token_pos and \
+        return len(self.objects) - 1 == self.state.token_pos and \
             self.state.current_object_processed
 
     @staticmethod
@@ -688,8 +674,8 @@ class GenericWorkflowEngine(object):
     def setWorkflow(self, list_or_tuple):
         return self.callbacks.replace(list_or_tuple)
 
-    @deprecated('`setPosition` has been with setting `state.token_pos` and '
-                '`state.callback_pos` separately')
+    @deprecated('`setPosition` has been replaced with setting `state.token_pos`'
+                ' and `state.callback_pos` separately')
     def setPosition(self, token_pos, callback_pos):
         # """Set the internal pointers (of current state/obj).
 
@@ -919,7 +905,7 @@ class TransitionActions(object):
         """Action to take when JumpToken is raised."""
         step = exc_info[1].args[0]
         if step > 0:
-            eng.state.token_pos = min(len(eng._objects), eng.state.token_pos - 1 +
+            eng.state.token_pos = min(len(eng), eng.state.token_pos - 1 +
                                      step)
         else:
             eng.state.token_pos = max(-1, eng.state.token_pos - 1 + step)
@@ -991,13 +977,13 @@ class ProcessingFactory(object):
 
     """Extend the engine by defining callbacks and mappers for its internals."""
 
-    @staticproperty
-    def action_mapper():  # pylint: disable=no-method-argument
+    @classproperty
+    def action_mapper(cls):
         """Set a mapper for actions while processing."""
         return ActionMapper
 
-    @staticproperty
-    def transition_exception_mapper():  # pylint: disable=no-method-argument
+    @classproperty
+    def transition_exception_mapper(cls):
         """Set a transition exception mapper for actions while processing."""
         return TransitionActions
 
@@ -1009,7 +995,7 @@ class ProcessingFactory(object):
         """
         eng.signal.workflow_started(eng)
         eng.state.current_object_processed = False
-        eng._objects = objects
+        eng.objects = objects
 
     @staticmethod
     def after_processing(eng, objects):

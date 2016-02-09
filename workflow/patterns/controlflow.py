@@ -1,29 +1,29 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2011, 2014, 2015 CERN.
+# Copyright (C) 2011, 2014, 2015, 2016 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
 # more details.
 
-from functools import wraps, partial
+"""Basic control flow patterns.
+
+See http://www.yawlfoundation.org/pages/resources/patterns.html#basic
+"""
+
 import threading
 import time
 import collections
-import copy
 
-from functools import partial
+from functools import wraps, partial
+
 from six.moves import _thread as thread, queue
 from six import string_types
 
+from ..engine import Callbacks
+
 MAX_TIMEOUT = 30000
-
-
-from workflow.engine import GenericWorkflowEngine as engine
-from workflow.engine import Callbacks
-
-# ----------------------- helper calls -------------------------------- #
 
 
 def TASK_JUMP_BWD(step=-1):
@@ -190,7 +190,7 @@ def WHILE(cond, branch):
     if callable(branch):
         branch = (branch,)
     # we don't know what is hiding inside branch
-    branch = tuple(Callbacks._cleanUpCallables(branch))
+    branch = tuple(Callbacks.cleanup_callables(branch))
 
     def x(obj, eng):
         if not cond(obj, eng):
@@ -264,7 +264,7 @@ def FOR(get_list_function, setter, branch, cache_data=False, order="ASC"):
     if callable(branch):
         branch = (branch,)
     # we don't know what is hiding inside branch
-    branch = tuple(Callbacks._cleanUpCallables(branch))
+    branch = tuple(Callbacks.cleanup_callables(branch))
     def _for(obj, eng):
         step = str(eng.getCurrTaskId())  # eg '[1]'
         if "_Iterators" not in eng.extra_data:
@@ -295,11 +295,9 @@ def FOR(get_list_function, setter, branch, cache_data=False, order="ASC"):
                 "ASC": 0,
                 "DSC": len(my_list_to_process) - 1}[order]
             # Store previous data
-            try:
+            if 'current_data' in eng.extra_data["_Iterators"][step]:
                 eng.extra_data["_Iterators"][step]["previous_data"] = \
                     eng.extra_data["_Iterators"][step]["current_data"]
-            except KeyError:
-                pass
 
         # Increment or decrement step value
         currently_within_list_bounds = \
@@ -317,19 +315,12 @@ def FOR(get_list_function, setter, branch, cache_data=False, order="ASC"):
             elif order == 'DSC':
                 eng.extra_data["_Iterators"][step]["value"] -= 1
         else:
-            try:
-                setter(obj, eng, step, eng.extra_data["_Iterators"][step]["previous_data"])
-            except KeyError:
-                pass
+            setter(obj, eng, step, eng.extra_data["_Iterators"][step]["previous_data"])
             del eng.extra_data["_Iterators"][step]
             eng.breakFromThisLoop()
 
     _for.__name__ = 'FOR'
     return [_for, branch, TASK_JUMP_BWD(-(len(branch) + 1))]
-
-
-# ---------------- basic control flow patterns ------------------------------ #
-# ---- http://www.yawlfoundation.org/pages/resources/patterns.html#basic ---- #
 
 
 def PARALLEL_SPLIT(*args):
@@ -464,12 +455,6 @@ def SIMPLE_MERGE(*args):
 
     workflow.append(final_task)
     return workflow
-
-
-
-# ------------------------------------------------------------- #
-#                       helper methods/classes                  #
-# ------------------------------------------------------------- #
 
 
 class MyTimeoutQueue(queue.Queue):
