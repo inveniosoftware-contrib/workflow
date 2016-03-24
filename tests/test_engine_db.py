@@ -65,7 +65,6 @@ class FakeToken(object):
 
     def __init__(self, data, **attributes):
         self.data = data
-        self._error_message = None
         self._status = None
         self._id_workflow = None  # TODO: Remove this
         self._callback_pos = None
@@ -74,9 +73,6 @@ class FakeToken(object):
         self._status = status
         self._callback_pos = callback_pos
         self._id_workflow = id_workflow
-
-    def set_error_message(self, msg):
-        self._error_message = msg
 
     @classproperty
     def known_statuses(cls):
@@ -100,6 +96,7 @@ class TestWorkflowEngineDb(object):
 
     def setup_method(self, method):
         self.dummy_db_obj = mock.Mock(spec=DummyDbObj())
+        self.dummy_db_obj.save(WorkflowStatus.NEW)
         self.wfe = DbWorkflowEngine(self.dummy_db_obj)
         self.data = ['one', 'two', 'three', 'four', 'five']
         self.tokens = [mock.Mock(spec=FakeToken(x)) for x in self.data]

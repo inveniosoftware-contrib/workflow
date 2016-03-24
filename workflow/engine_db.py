@@ -105,9 +105,6 @@ class DbWorkflowEngine(GenericWorkflowEngine):
         :type db_obj: Workflow
         """
         self.db_obj = db_obj
-        self.save(WorkflowStatus.NEW)
-        # To initialize the logger, `db_obj` must be first set. For this we
-        # must have saved at least once before calling `__init__`.
         super(DbWorkflowEngine, self).__init__()
 
     @classproperty
