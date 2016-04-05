@@ -260,15 +260,18 @@ def PROFILE(call, output=None,
           default is: time, calls, cumulative, pcalls
           @see pstats module for explanation
     """
-
     @wraps(PROFILE)
     def x(obj, eng):
         if isinstance(call, list) or isinstance(call, tuple):
             new_eng = eng.duplicate()
             new_eng.setWorkflow(call)
-            profileit = lambda: new_eng.process([obj])
+
+            def profileit():
+                return new_eng.process([obj])
         else:
-            profileit = lambda: call(obj, eng)
+            def profileit():
+                return call(obj, eng)
+
         if output:
             cProfile.runctx('profileit()', globals(), locals(), output)
         else:
@@ -350,7 +353,9 @@ def DEBUG_CYCLE(stmt, setup=None,
     """
 
     if not callable(debug_stopper):
-        debug_stopper = lambda obj, eng: False
+        def debug_stopper(obj, eng):
+            return False
+        debug_stopper = debug_stopper
     to_pass = {}
     if kwargs:
         to_pass.update(kwargs)

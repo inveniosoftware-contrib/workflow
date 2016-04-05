@@ -140,10 +140,11 @@ def IF(cond, branch):
     @attention: the branch is inserted inside [] block, therefore jumping is
                 limited only inside the branch
     """
-    x = lambda obj, eng: cond(obj, eng) and eng.jumpCallForward(
-        1) or eng.breakFromThisLoop()
-    x.__name__ = 'IF'
-    return [x, branch]
+    def _x(obj, eng):
+        return cond(obj, eng) and eng.jumpCallForward(1) \
+            or eng.breakFromThisLoop()
+    _x.__name__ = 'IF'
+    return [_x, branch]
 
 
 def IF_NOT(cond, branch):
@@ -155,12 +156,12 @@ def IF_NOT(cond, branch):
     @attention: the branch is inserted inside [] block, therefore jumping is
                 limited only inside the branch
     """
-    def x(obj, eng):
+    def _x(obj, eng):
         if cond(obj, eng):
             eng.breakFromThisLoop()
         return 1
-    x.__name__ = 'IF_NOT'
-    return [x, branch]
+    _x.__name__ = 'IF_NOT'
+    return [_x, branch]
 
 
 def IF_ELSE(cond, branch1, branch2):
@@ -175,10 +176,12 @@ def IF_ELSE(cond, branch1, branch2):
     """
     if branch1 is None or branch2 is None:
         raise Exception("Neither of the branches can be None/empty")
-    x = lambda obj, eng: cond(obj, eng) and eng.jumpCallForward(
-        1) or eng.jumpCallForward(3)
-    x.__name__ = 'IF_ELSE'
-    return [x, branch1, BREAK(), branch2]
+
+    def _x(obj, eng):
+        return cond(obj, eng) and eng.jumpCallForward(1) \
+            or eng.jumpCallForward(3)
+    _x.__name__ = 'IF_ELSE'
+    return [_x, branch1, BREAK(), branch2]
 
 
 def WHILE(cond, branch):
@@ -192,11 +195,11 @@ def WHILE(cond, branch):
     # we don't know what is hiding inside branch
     branch = tuple(Callbacks.cleanup_callables(branch))
 
-    def x(obj, eng):
+    def _x(obj, eng):
         if not cond(obj, eng):
             eng.breakFromThisLoop()
-    x.__name__ = 'WHILE'
-    return [x, branch, TASK_JUMP_BWD(-(len(branch) + 1))]
+    _x.__name__ = 'WHILE'
+    return [_x, branch, TASK_JUMP_BWD(-(len(branch) + 1))]
 
 
 def CMP(a, b, op):
@@ -233,6 +236,7 @@ def CMP(a, b, op):
     _CMP.hide = True
     return _CMP
 
+
 def _setter(key, obj, eng, step, val):
     eng.extra_data[key] = val
 
@@ -251,9 +255,10 @@ def FOR(get_list_function, setter, branch, cache_data=False, order="ASC"):
     order you want to iterate over your list from start to end(ASC) or from end
     to start (DSC).
     :param setter: function to call in order to save the current item of the
-    list that is being iterated over. expected to take arguments (obj, eng, val)
-    :param getter: function to call in order to retrieve the current item of the
-    list that is being iterated over. expected to take arguments(obj, eng)
+    list that is being iterated over.
+    expected to take arguments (obj, eng, val)
+    :param getter: function to call in order to retrieve the current item of
+    the list that is being iterated over. expected to take arguments(obj, eng)
     """
     # be sane
     assert order in ('ASC', 'DSC')
@@ -265,6 +270,7 @@ def FOR(get_list_function, setter, branch, cache_data=False, order="ASC"):
         branch = (branch,)
     # we don't know what is hiding inside branch
     branch = tuple(Callbacks.cleanup_callables(branch))
+
     def _for(obj, eng):
         step = str(eng.getCurrTaskId())  # eg '[1]'
         if "_Iterators" not in eng.extra_data:
@@ -279,8 +285,8 @@ def FOR(get_list_function, setter, branch, cache_data=False, order="ASC"):
                 elif isinstance(get_list_function, collections.Iterable):
                     return list(get_list_function)
                 else:
-                    raise TypeError("get_list_function is not a callable nor a "
-                                    "iterable")
+                    raise TypeError("get_list_function is not a callable nor a"
+                                    " iterable")
 
         my_list_to_process = get_list()
 
@@ -300,22 +306,24 @@ def FOR(get_list_function, setter, branch, cache_data=False, order="ASC"):
                     eng.extra_data["_Iterators"][step]["current_data"]
 
         # Increment or decrement step value
+        step_value = eng.extra_data["_Iterators"][step]["value"]
         currently_within_list_bounds = \
-            (order == "ASC" and eng.extra_data["_Iterators"][step]["value"] < len(my_list_to_process)) or \
-            (order == "DSC" and eng.extra_data["_Iterators"][step]["value"] > -1)
+            (order == "ASC" and step_value < len(my_list_to_process)) or \
+            (order == "DSC" and step_value > -1)
         if currently_within_list_bounds:
             # Store current data for ourselves
             eng.extra_data["_Iterators"][step]["current_data"] = \
-                my_list_to_process[eng.extra_data["_Iterators"][step]["value"]]
+                my_list_to_process[step_value]
             # Store for the user
             if setter:
-                setter(obj, eng, step, my_list_to_process[eng.extra_data["_Iterators"][step]["value"]])
+                setter(obj, eng, step, my_list_to_process[step_value])
             if order == 'ASC':
                 eng.extra_data["_Iterators"][step]["value"] += 1
             elif order == 'DSC':
                 eng.extra_data["_Iterators"][step]["value"] -= 1
         else:
-            setter(obj, eng, step, eng.extra_data["_Iterators"][step]["previous_data"])
+            setter(obj, eng, step,
+                   eng.extra_data["_Iterators"][step]["previous_data"])
             del eng.extra_data["_Iterators"][step]
             eng.breakFromThisLoop()
 
@@ -347,7 +355,9 @@ def PARALLEL_SPLIT(*args):
         eng.store['lock'] = lock
         for func in calls:
             new_eng = eng.duplicate()
-            new_eng.setWorkflow([lambda o, e: e.store.update({'lock': lock}), func])
+            new_eng.setWorkflow(
+                [lambda o, e: e.store.update({'lock': lock}), func]
+            )
             thread.start_new_thread(new_eng.process, ([obj], ))
             # new_eng.process([obj])
     return lambda o, e: _parallel_split(o, e, args)

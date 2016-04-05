@@ -7,70 +7,77 @@
 # under the terms of the Revised BSD License; see LICENSE file for
 # more details.
 
-"""Setup script for workflow package."""
+"""Simple workflows for Python"""
 
 import os
-import re
-import sys
 import platform
 
-from setuptools import setup
-from setuptools.command.test import test as TestCommand
+from setuptools import find_packages, setup
 
-
-class PyTest(TestCommand):
-
-    user_options = [('pytest-args=', 'a', 'Arguments to pass to py.test')]
-
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-        errno = pytest.main(['tests'])
-        sys.exit(errno)
-
-
-# Get the version string.  Cannot be done with import!
-with open(os.path.join('workflow', 'version.py'), 'rt') as f:
-    version = re.search(
-        '__version__\s*=\s*"(?P<version>.*)"\n',
-        f.read()
-    ).group('version')
+readme = open('README.rst').read()
+history = open('CHANGES.rst').read()
 
 tests_require = [
+    'coverage>=4.0',
+    'mock>=1.0.0',
+    'isort>=4.2.2',
     'pytest-cache>=1.0',
     'pytest-cov>=1.8.0',
     'pytest-pep8>=1.0.6',
-    'mock>=1.0.0',
-    'pytest>=2.6.1',
-    'blinker==1.3',
+    'pytest>=2.8.0',
 ]
+
+extras_require = {
+    'docs': [
+        'Sphinx>=1.3',
+        'sphinx_rtd_theme'
+    ],
+    'tests': tests_require,
+}
+
+extras_require['all'] = []
+for reqs in extras_require.values():
+    extras_require['all'].extend(reqs)
 
 install_requires = [
     'configobj>4.7.0',
+    'blinker>=1.3',
     'six',
+]
+
+setup_requires = [
+    'pytest-runner>=2.6.2',
 ]
 
 if platform.python_version_tuple() < ('3', '4'):
     install_requires.append('enum34>=1.0.4')
 
+packages = find_packages()
+
+# Get the version string. Cannot be done with import!
+g = {}
+with open(os.path.join('workflow', 'version.py'), 'rt') as fp:
+    exec(fp.read(), g)
+    version = g['__version__']
+
 setup(
     name='workflow',
-    packages=['workflow', 'workflow.patterns'],
-    scripts=['bin/run_workflow.py'],
     version=version,
-    description='Simple workflows for Python',
+    description=__doc__,
+    long_description=readme + '\n\n' + history,
+    packages=packages,
+    scripts=['bin/run_workflow.py'],
     author='Invenio Collaboration',
     author_email='info@invenio-software.org',
     url='https://github.com/inveniosoftware/workflow',
     keywords=['workflows', 'finite state machine', 'task execution'],
+    zip_safe=False,
+    include_package_data=True,
+    platforms='any',
+    extras_require=extras_require,
+    install_requires=install_requires,
+    setup_requires=setup_requires,
+    tests_require=tests_require,
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
@@ -79,6 +86,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Development Status :: 5 - Production/Stable',
         'Environment :: Other Environment',
         'Intended Audience :: Developers',
@@ -88,12 +96,4 @@ setup(
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Utilities',
     ],
-    extras_require={
-        "docs": ["sphinx", "sphinx_rtd_theme"],
-        "tests": tests_require,
-    },
-    tests_require=tests_require,
-    cmdclass={'test': PyTest},
-    install_requires=install_requires,
-    long_description=open('README.rst').read(),
 )

@@ -75,7 +75,6 @@ class ObjectStatus(EnumLabel):
         }
 
 
-
 class DbWorkflowEngine(GenericWorkflowEngine):
     """GenericWorkflowEngine with DB persistence.
 
@@ -153,8 +152,6 @@ class DbWorkflowEngine(GenericWorkflowEngine):
         """Return the objects associated with this workflow."""
         return [obj for obj in self.database_objects
                 if obj.status in [obj.known_statuses.RUNNING]]
-    #                                                                          #
-    ############################################################################
 
     def __repr__(self):
         """Allow to represent the DbWorkflowEngine."""
@@ -186,13 +183,16 @@ class DbTransitionAction(TransitionActions):
     def HaltProcessing(obj, eng, callbacks, exc_info):
         """Action to take when HaltProcessing is raised."""
         e = exc_info[1]
-        obj.save(status=obj.known_statuses.HALTED, task_counter=eng.state.callback_pos,
+        obj.save(status=obj.known_statuses.HALTED,
+                 task_counter=eng.state.callback_pos,
                  id_workflow=eng.uuid)
         eng.save(status=WorkflowStatus.HALTED)
         message = "Workflow '%s' halted at task %s with message: %s" % \
                   (eng.name, eng.current_taskname or "Unknown", e.message)
         eng.log.warning(message)
-        super(DbTransitionAction, DbTransitionAction).HaltProcessing(obj, eng, callbacks, exc_info)
+        super(DbTransitionAction, DbTransitionAction).HaltProcessing(
+            obj, eng, callbacks, exc_info
+        )
 
     @staticmethod
     def Exception(obj, eng, callbacks, exc_info):
@@ -203,17 +203,22 @@ class DbTransitionAction(TransitionActions):
         if obj:
             # Sets an error message as a tuple (title, details)
             obj.set_error_message(exception_repr)
-            obj.save(status=obj.known_statuses.ERROR, callback_pos=eng.state.callback_pos,
+            obj.save(status=obj.known_statuses.ERROR,
+                     callback_pos=eng.state.callback_pos,
                      id_workflow=eng.uuid)
         eng.save(WorkflowStatus.ERROR)
         try:
-            super(DbTransitionAction, DbTransitionAction).Exception(obj, eng, callbacks, exc_info)
+            super(DbTransitionAction, DbTransitionAction).Exception(
+                obj, eng, callbacks, exc_info
+            )
         except Exception:
             # We expect this to reraise
             pass
         # Change the type of the Exception to WorkflowError, but use its tb
-        reraise(WorkflowError(message=exception_repr, id_workflow=eng.uuid,
-                              id_object=eng.state.token_pos), None, exc_info[2])
+        reraise(WorkflowError(
+            message=exception_repr, id_workflow=eng.uuid,
+            id_object=eng.state.token_pos), None, exc_info[2]
+        )
 
 
 class DbProcessingFactory(ProcessingFactory):
@@ -227,21 +232,29 @@ class DbProcessingFactory(ProcessingFactory):
     @staticmethod
     def before_object(eng, objects, obj):
         """Action to take before the proccessing of an object begins."""
-        obj.save(status=obj.known_statuses.RUNNING, id_workflow=eng.db_obj.uuid)
-        super(DbProcessingFactory, DbProcessingFactory).before_object(eng, objects, obj)
+        obj.save(status=obj.known_statuses.RUNNING,
+                 id_workflow=eng.db_obj.uuid)
+        super(DbProcessingFactory, DbProcessingFactory).before_object(
+            eng, objects, obj
+        )
 
     @staticmethod
     def after_object(eng, objects, obj):
         """Action to take once the proccessing of an object completes."""
         # We save each object once it is fully run through
-        obj.save(status=obj.known_statuses.COMPLETED, id_workflow=eng.db_obj.uuid)
-        super(DbProcessingFactory, DbProcessingFactory).after_object(eng, objects, obj)
+        obj.save(status=obj.known_statuses.COMPLETED,
+                 id_workflow=eng.db_obj.uuid)
+        super(DbProcessingFactory, DbProcessingFactory).after_object(
+            eng, objects, obj
+        )
 
     @staticmethod
     def before_processing(eng, objects):
         """Executed before processing the workflow."""
         eng.save(WorkflowStatus.RUNNING)
-        super(DbProcessingFactory, DbProcessingFactory).before_processing(eng, objects)
+        super(DbProcessingFactory, DbProcessingFactory).before_processing(
+            eng, objects
+        )
 
     @staticmethod
     def after_processing(eng, objects):

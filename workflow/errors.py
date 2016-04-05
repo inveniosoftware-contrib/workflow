@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2011, 2012, 2014, 2015 CERN.
+# Copyright (C) 2011, 2012, 2014, 2015, 2016 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
@@ -86,9 +86,6 @@ class ContinueNextToken(WorkflowTransition):
     """Jump up to next token (it can be called many levels deep)."""
 
 
-#################################################################################
-#                                                                               #
-
 class JumpToken(WorkflowTransition):
     """Jump N steps in the given direction."""
 
@@ -114,8 +111,6 @@ class JumpCallForward(WorkflowTransition):
 class JumpCallBack(WorkflowTransition):
     """In one loop ``[call, call...]``, jump `x` steps forward."""
 
-#                                                                               #
-#################################################################################
 
 class BreakFromThisLoop(WorkflowTransition):
     """Break from this loop, but do not stop processing."""
@@ -125,7 +120,8 @@ class BreakFromThisLoop(WorkflowTransition):
 class WorkflowError(Exception):
     """Raised when workflow experiences an error."""
 
-    def __init__(self, message, id_workflow=None, id_object=None, payload=None):
+    def __init__(self, message, id_workflow=None,
+                 id_object=None, payload=None):
         """Instanciate a WorkflowError object."""
         self.message = message
         self.id_workflow = id_workflow
