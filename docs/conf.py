@@ -20,15 +20,17 @@ import os
 import re
 import sys
 
+import sphinx.environment
 
-_html_theme = "sphinx_rtd_theme"
-_html_theme_path = []
-try:
-    import sphinx_rtd_theme
-    _html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-except ImportError:
-    print("Template {0} not found, pip install it", file=sys.stderr)
-    _html_theme = "default"
+_warn_node_old = sphinx.environment.BuildEnvironment.warn_node
+
+
+def _warn_node(self, msg, *args, **kwargs):
+    """Do not warn on external images."""
+    if not msg.startswith('nonlocal image URI found:'):
+        _warn_node_old(self, msg, *args, **kwargs)
+
+sphinx.environment.BuildEnvironment.warn_node = _warn_node
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -119,11 +121,23 @@ pygments_style = 'sphinx'
 
 
 # -- Options for HTML output ----------------------------------------------
+html_theme = 'alabaster'
+
+html_theme_options = {
+    'description': 'Run Finite State Machines with memory',
+    'github_user': 'inveniosoftware',
+    'github_repo': 'workflow',
+    'github_button': False,
+    'github_banner': True,
+    'show_powered_by': False,
+    'extra_nav_links': {
+        'workflow@GitHub': 'http://github.com/inveniosoftware/workflow',
+        'workflow@PyPI': 'http://pypi.python.org/pypi/workflow/',
+    }
+}
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#html_theme = 'default'
-html_theme = _html_theme
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -132,7 +146,6 @@ html_theme = _html_theme
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
-html_theme_path = _html_theme_path
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".

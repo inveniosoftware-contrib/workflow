@@ -13,3 +13,5 @@ Contributors:
 * Jiri Kuncar <jiri.kuncar@cern.ch>
 * Tibor Simko <tibor.simko@cern.ch>
 * Brett Anthoine <brett.anthoine@netplus.pro>
+* Dimitrios Semitsoglou-Tsiapos <dsemitso@cern.ch>
+* Jan Aage Lavik <jan.age.lavik@cern.ch>

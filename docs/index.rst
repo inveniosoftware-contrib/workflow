@@ -14,8 +14,8 @@ Workflow allows for a number of independent pieces of data to be processed by
 the same logic, while allowing for the entire process to be forwarded,
 backwarded, paused, inspected, re-executed, modified and stored.
 
-How dow I use Workflow?
-=======================
+How do I use Workflow?
+======================
 
 In the following sections we will take a look at Workflow's features by working
 on examples of increasing complexity. Please keep an eye out for comments in
