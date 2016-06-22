@@ -22,16 +22,6 @@ import sys
 
 import sphinx.environment
 
-_warn_node_old = sphinx.environment.BuildEnvironment.warn_node
-
-
-def _warn_node(self, msg, *args, **kwargs):
-    """Do not warn on external images."""
-    if not msg.startswith('nonlocal image URI found:'):
-        _warn_node_old(self, msg, *args, **kwargs)
-
-sphinx.environment.BuildEnvironment.warn_node = _warn_node
-
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -41,6 +31,9 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
+
+# Do not warn on external images.
+suppress_warnings = ['image.nonlocal_uri']
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
