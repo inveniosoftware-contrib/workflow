@@ -67,7 +67,7 @@ setup(
     packages=packages,
     scripts=['bin/run_workflow.py'],
     author='Invenio Collaboration',
-    author_email='info@invenio-software.org',
+    author_email='info@inveniosoftware.org',
     url='https://github.com/inveniosoftware/workflow',
     keywords=['workflows', 'finite state machine', 'task execution'],
     zip_safe=False,

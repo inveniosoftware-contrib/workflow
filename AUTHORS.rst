@@ -4,7 +4,7 @@ Authors
 Workflow was originally developed by Roman Chyla.  It is now being
 developed and maintained by the Invenio collaboration.  You can
 contact us at
-`info@invenio-software.org <mailto:info@invenio-software.org>`_.
+`info@inveniosoftware.org <mailto:info@inveniosoftware.org>`_.
 
 Contributors:
 
