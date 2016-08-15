@@ -732,7 +732,7 @@ parallel after task A). It could be implemented like this:
     def PARALLEL_SPLIT(*args):
         """
         Tasks A,B,C,D... are all started in parallel
-        @attention: tasks A,B,C,D... are not addressable, you can't
+        @attention: tasks A,B,C,D... are not addressable,
             you can't use jumping to them (they are invisible to
             the workflow engine). Though you can jump inside the
             branches
