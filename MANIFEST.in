@@ -5,6 +5,7 @@
 # under the terms of the Revised BSD License; see LICENSE file for
 # more details.
 
+include docs/requirements.txt
 include LICENSE
 include tox.ini
 include docs/*.rst docs/*.py docs/Makefile

@@ -40,7 +40,7 @@ Here is a simple example of a workflow configuration:
 Documentation
 =============
 
-Documentation is readable at http://workflow.readthedocs.org or can be built using Sphinx: ::
+Documentation is readable at http://workflow.readthedocs.io or can be built using Sphinx: ::
 
     pip install Sphinx
     python setup.py build_sphinx

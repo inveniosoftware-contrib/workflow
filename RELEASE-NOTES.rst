@@ -77,7 +77,7 @@ Installation
 Documentation
 -------------
 
-   http://workflow.readthedocs.org/en/v1.2.0
+   http://workflow.readthedocs.io/en/v1.2.0
 
 Good luck and thanks for using Workflow.
 
