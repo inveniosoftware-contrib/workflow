@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # This file is part of Invenio.
-# Copyright (C) 2013, 2014, 2015 CERN.
+# Copyright (C) 2013, 2014, 2015, 2016 CERN.
 #
 # Invenio is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@ def deprecated(message, category=DeprecationWarning):
         """Decorator which can be used to mark functions as deprecated.
 
         :param message: text to include in the warning
-        :param category: warning category
+        :param category: warning category exception class
         """
         @wraps(func)
         def new_func(*args, **kwargs):
