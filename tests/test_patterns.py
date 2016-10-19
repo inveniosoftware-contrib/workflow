@@ -254,12 +254,12 @@ class TestGenericWorkflowEngine(object):
                     a('ok-2'),
                     cf.IF(lambda obj, eng: 'ok-3' not in obj,
                           lambda obj, eng: (obj.append('ok-3') and
-                                            eng.breakFromThisLoop())),
+                                            eng.break_current_loop())),
                     a('ok-4')),
 
                  a('xx'),
                  lambda obj, eng: ('jump-verified' in obj and
-                                   eng.breakFromThisLoop()),
+                                   eng.break_current_loop()),
                  a('nasty-jump'),
                  cf.TASK_JUMP_IF(
                     lambda obj, eng: 'jump-verified' not in obj, -100)]),

@@ -739,7 +739,7 @@ class GenericWorkflowEngine(object):
         # """Remove callbacks for the given `key`."""
         self.callbacks.clear(key)
 
-    @deprecated('`removeCallbacks` is replaced with `callbacks.clear`')
+    @deprecated('`replaceCallbacks` is replaced with `callbacks.clear`')
     def replaceCallbacks(self, key, funcs):
         # """Replace processing workflow with a new workflow."""
         self.callbacks.replace(key, funcs)
@@ -773,7 +773,7 @@ class GenericWorkflowEngine(object):
         # """Jump to `x` th token."""
         raise JumpTokenForward(offset)
 
-    @deprecated('`jumpTokenForward` is replaced with `jump_token`, used '
+    @deprecated('`jumpTokenBack` is replaced with `jump_token`, used '
                 'with a negative offset')
     def jumpTokenBack(self, offset):
         # """Return `x` tokens back - be careful with circular loops."""
@@ -818,12 +818,12 @@ class GenericWorkflowEngine(object):
                 self.setVar(key, default)
                 return default
 
-    @deprecated('`getVar` is replaced with the `extra_data` dictionary')
+    @deprecated('`hasVar` is replaced with the `extra_data` dictionary')
     def hasVar(self, key):
         # """Return True if parameter of this name is stored."""
         return key in self.extra_data
 
-    @deprecated('`getVar` is replaced with the `extra_data` dictionary')
+    @deprecated('`delVar` is replaced with the `extra_data` dictionary')
     def delVar(self, key):
         # """Delete parameter from the internal storage."""
         if key in self.extra_data:
@@ -837,11 +837,11 @@ class GenericWorkflowEngine(object):
     def continueNextToken(self):
         self.continue_next_token()
 
-    @deprecated('`continueNextToken` is replaced with `stop`')
+    @deprecated('`stopProcessing` is replaced with `stop`')
     def stopProcessing(self):
         return self.stop()
 
-    @deprecated('`continueNextToken` is replaced with `break_current_loop`')
+    @deprecated('`breakFromThisLoop` is replaced with `break_current_loop`')
     def breakFromThisLoop(self):
         return self.break_current_loop()
 
