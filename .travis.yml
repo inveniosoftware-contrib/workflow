@@ -26,3 +26,13 @@ after_success:
 
 notifications:
   email: false
+
+deploy:
+  provider: pypi
+  user: inveniosoftware
+  password:
+    secure: "VuWcET8lKaHnQJ/6i7ryV5F1YqegOQEvmxSe8ph8s5waowxPtnroDCtegCSOYR3865cB37UoE5hqb1DJmEQ8tuII6dGP0vG8FZJ365N1d1nH87XHFJnplCmAQyLGGMGZnw8+XV17KpzsyBR8v+n8RvY909tQd/i0Rsyrp+5/OlA="
+  distributions: "sdist bdist_wheel"
+  on:
+    tags: true
+    python: "2.7"
