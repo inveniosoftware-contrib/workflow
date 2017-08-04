@@ -1,6 +1,14 @@
 Changes
 =======
 
+Version 2.0.1 (released 2017-08-04):
+
+Improved features
+-----------------
+
+- Replaces some deprecated calls with their non-deprecated equivalents
+  in order to avoid raising a `DeprecationWarning`.
+
 Version 2.0.0 (released 2016-06-17):
 
 Incompatible changes
