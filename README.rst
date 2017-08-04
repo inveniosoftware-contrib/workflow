@@ -2,14 +2,10 @@
  workflow
 ==========
 
-.. image:: https://travis-ci.org/inveniosoftware/workflow.png?branch=master
-    :target: https://travis-ci.org/inveniosoftware/workflow
-.. image:: https://coveralls.io/repos/inveniosoftware/workflow/badge.png?branch=master
-    :target: https://coveralls.io/r/inveniosoftware/workflow
-.. image:: https://pypip.in/v/workflow/badge.png
-   :target: https://pypi.python.org/pypi/workflow/
-.. image:: https://pypip.in/d/workflow/badge.png
-   :target: https://pypi.python.org/pypi/workflow/
+.. image:: https://travis-ci.org/inveniosoftware-contrib/workflow.png?branch=master
+    :target: https://travis-ci.org/inveniosoftware-contrib/workflow
+.. image:: https://coveralls.io/repos/github/inveniosoftware-contrib/workflow/badge.svg?branch=master
+    :target: https://coveralls.io/github/inveniosoftware-contrib/workflow?branch=master
 
 About
 =====
