@@ -17,10 +17,30 @@
 from __future__ import print_function
 
 import os
-import re
 import sys
 
-import sphinx.environment
+from autosemver.packaging import (
+    get_changelog, get_current_version, get_releasenotes
+)
+
+
+if not os.path.exists('_build/html/_static'):
+    os.makedirs('_build/html/_static')
+
+URL = 'https://github.com/inveniosoftware-contrib/workflow'
+BUGTRACKER_URL = URL + '/issues/'
+
+with open('_build/html/_static/RELEASE_NOTES.txt', 'w') as changelog_fd:
+    changelog_fd.write(get_releasenotes(
+        project_dir='..',
+        bugtracker_url=BUGTRACKER_URL,
+    ))
+with open('_build/html/_static/CHANGELOG.txt', 'w') as changelog_fd:
+    changelog_fd.write(get_changelog(
+        project_dir='..',
+        bugtracker_url=BUGTRACKER_URL,
+    ))
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -63,13 +83,9 @@ copyright = u'2014, Roman Chyla'
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-#
-# The short X.Y version.
-with open(os.path.join('..', 'workflow', 'version.py'), 'rt') as f:
-    version = re.search(
-        '__version__\s*=\s*"(?P<version>.*)"\n',
-        f.read()
-    ).group('version')
+version = get_current_version(
+    project_name='workflow'
+)
 
 # The full version, including alpha/beta/rc tags.
 release = version

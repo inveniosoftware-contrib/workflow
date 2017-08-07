@@ -873,14 +873,24 @@ DbWorkflowEngine API
 .. autoclass:: workflow.engine_db.ObjectStatus
    :members:
 
-
-.. include:: ../CHANGES.rst
-
 .. include:: ../CONTRIBUTING.rst
+
+
+Release notes
+---------------
+Here you can find the `release notes`_.
+
+
+Changelog
+------------
+Here you can find the `full changelog for this version`_.
+
 
 License
 =======
 
 .. include:: ../LICENSE
 
-.. include:: ../AUTHORS.rst
+
+.. _release notes: _static/RELEASE_NOTES.txt
+.. _full changelog for this version: _static/CHANGELOG.txt

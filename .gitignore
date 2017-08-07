@@ -2,10 +2,12 @@
 *.egg-info
 *.pyc
 *~
+*.sw?
 .cache
 .coverage
 .ropeproject
 .tox
+.eggs
 MANIFEST
 build
 build/*
@@ -15,3 +17,5 @@ dist/*
 docs/_build
 docs/db
 docs/static
+AUTHORS
+CHANGELOG
