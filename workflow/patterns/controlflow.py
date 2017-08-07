@@ -15,45 +15,16 @@ See http://www.yawlfoundation.org/pages/resources/patterns.html#basic
 import threading
 import time
 import collections
-
 from functools import wraps, partial
 
 from six.moves import _thread as thread, queue
 from six import string_types
 
+from .utils import with_nice_docs
 from ..engine import Callbacks
 
+
 MAX_TIMEOUT = 30000
-
-
-def with_nice_docs(func):
-    """Add nice documentation to the function returned by another function.
-
-    Adds the extra parameter ``comment``, that might be used to override the
-    automatically generated docs. This is specially useful for all the control
-    flow functions defined here.
-
-    Args:
-        func(callable): function to decorate, that must return a function.
-        comment(string): override for the automatically generated docs.
-
-    Returns:
-        callable: the function that ``func`` would return with the extra nice
-        docstring.
-    """
-    def _comment_from_params(*args, **kwargs):
-        return '(' + ', '.join(kwargs.items()) + ')'
-
-    @wraps(func)
-    def _decorated_func(*args, **kwargs):
-        comment = kwargs.pop('comment', _comment_from_params())
-        inner_func = func(*args, **kwargs)
-        if callable(inner_func):
-            inner_func.__docs__ = comment
-
-        return inner_func
-
-    return _decorated_func
 
 
 @with_nice_docs
@@ -371,6 +342,7 @@ def FOR(get_list_function, setter, branch, cache_data=False, order="ASC"):
     return [_for, branch, TASK_JUMP_BWD(-(len(branch) + 1))]
 
 
+@with_nice_docs
 def PARALLEL_SPLIT(*args):
     """Start task in parallel.
 
@@ -403,6 +375,7 @@ def PARALLEL_SPLIT(*args):
     return lambda o, e: _parallel_split(o, e, args)
 
 
+@with_nice_docs
 def SYNCHRONIZE(*args, **kwargs):
     """
     After the execution of task B, task C, and task D, task E can be executed.
@@ -446,6 +419,7 @@ def SYNCHRONIZE(*args, **kwargs):
     return _synchronize
 
 
+@with_nice_docs
 def CHOICE(arbiter, *predicates, **kwpredicates):
     """
     A choice is made to execute either task B, task C or task D
@@ -484,6 +458,7 @@ def CHOICE(arbiter, *predicates, **kwpredicates):
     return workflow
 
 
+@with_nice_docs
 def SIMPLE_MERGE(*args):
     """
     Task E will be started when any one of the tasks B, C or D completes.

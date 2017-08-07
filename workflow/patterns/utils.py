@@ -11,6 +11,7 @@ from __future__ import print_function
 
 import sys
 
+import collections
 import inspect
 import pstats
 import six
@@ -27,6 +28,49 @@ except ImportError:
     import profile as cProfile
 
 
+def with_nice_docs(func):
+    """Add nice documentation to the function returned by another function.
+
+    Adds the extra parameter ``comment``, that might be used to override the
+    automatically generated docs. This is specially useful for all the control
+    flow functions defined here.
+
+    Args:
+        func(callable): function to decorate, that must return a function.
+        comment(string): override for the automatically generated docs.
+
+    Returns:
+        callable: the function that ``func`` would return with the extra nice
+        docstring.
+    """
+    def _comment_from_params(*args, **kwargs):
+        args_doc = (
+            'args(' + ', '.join(
+                str(arg) for arg in args
+            ) + ')'
+        )
+        kwargs_doc = (
+            'kwargs(' + ', '.join(
+                '%s<%s>' % (key, type(value)) for key, value in kwargs.items()
+            ) + ')'
+        )
+        return func.__name__ + ': ' + args_doc + '; ' + kwargs_doc + '.'
+
+    @wraps(func)
+    def _decorated_func(*args, **kwargs):
+        comment = kwargs.pop('comment', _comment_from_params(*args, **kwargs))
+        inner_func = func(*args, **kwargs)
+        if callable(inner_func):
+            inner_func.__doc__ = comment
+        elif isinstance(inner_func, collections.Iterable):
+            inner_func[0].__doc__ = comment
+
+        return inner_func
+
+    return _decorated_func
+
+
+@with_nice_docs
 def RUN_WF(workflow,
            engine=None,
            data_connector=None,
@@ -113,6 +157,7 @@ def EMPTY_CALL(obj, eng):
     pass
 
 
+@with_nice_docs
 def ENG_GET(something):
     """this is the same as lambda obj, eng: eng.extra_data.get(something)
     :param something: str, key of the object to retrieve
@@ -124,6 +169,7 @@ def ENG_GET(something):
     return x
 
 
+@with_nice_docs
 def ENG_SET(key, value):
     """this is the same as lambda obj, eng: eng.extra_data.update({'key': value})
     :param key: str, key of the object to retrieve
@@ -138,6 +184,7 @@ def ENG_SET(key, value):
     return _eng_set
 
 
+@with_nice_docs
 def OBJ_GET(something, cond='all'):
     """this is the same as lambda obj, eng: something in obj and obj[something]
     :param something: str, key of the object to retrieve or list of strings
@@ -174,6 +221,7 @@ def OBJ_GET(something, cond='all'):
     return x
 
 
+@with_nice_docs
 def OBJ_SET(key, value):
     """this is the same as lambda obj, eng: obj.__setitem__(key, value)
     :param key: str, key of the object to retrieve
@@ -191,6 +239,7 @@ def OBJ_SET(key, value):
 # ----------------------- error handlling -------------------------------
 
 
+@with_nice_docs
 def ERROR(msg='Error in the workflow'):
     """Throws uncatchable error stopping execution and printing the message"""
     caller = inspect.getmodule(inspect.currentframe().f_back)
@@ -206,6 +255,7 @@ def ERROR(msg='Error in the workflow'):
     return x
 
 
+@with_nice_docs
 def TRY(onecall, retry=1, onfailure=Exception, verbose=True):
     """Wrap the call in try...except statement and eventually
     retries when failure happens
@@ -245,6 +295,7 @@ def TRY(onecall, retry=1, onfailure=Exception, verbose=True):
     return x
 
 
+@with_nice_docs
 def PROFILE(call, output=None,
             stats=['time', 'calls', 'cumulative', 'pcalls']):
     """Run the call(s) inside profiler
@@ -292,6 +343,7 @@ def PROFILE(call, output=None,
     return x
 
 
+@with_nice_docs
 def DEBUG_CYCLE(stmt, setup=None,
                 onerror=None,
                 debug_stopper=None,
@@ -425,6 +477,7 @@ def DEBUG_CYCLE(stmt, setup=None,
     return x
 
 
+@with_nice_docs
 def CALLFUNC(func, outkey=None, debug=False, stopper=None,
              args=[], oeargs=[], ekeys={}, okeys={}, **kwargs):
     """Workflow task CALLFUNC
