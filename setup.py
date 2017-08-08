@@ -15,7 +15,6 @@ import platform
 from setuptools import find_packages, setup
 
 readme = open('README.rst').read()
-history = open('CHANGES.rst').read()
 
 tests_require = [
     'coverage>=4.0',
@@ -39,12 +38,14 @@ for reqs in extras_require.values():
     extras_require['all'].extend(reqs)
 
 install_requires = [
+    'autosemver~=0.5',
     'configobj>4.7.0',
     'blinker>=1.3',
     'six',
 ]
 
 setup_requires = [
+    'autosemver~=0.5',
     'pytest-runner>=2.6.2',
 ]
 
@@ -53,22 +54,16 @@ if platform.python_version_tuple() < ('3', '4'):
 
 packages = find_packages()
 
-# Get the version string. Cannot be done with import!
-g = {}
-with open(os.path.join('workflow', 'version.py'), 'rt') as fp:
-    exec(fp.read(), g)
-    version = g['__version__']
+URL = 'https://github.com/inveniosoftware/workflow'
 
 setup(
     name='workflow',
-    version=version,
     description=__doc__,
-    long_description=readme + '\n\n' + history,
     packages=packages,
     scripts=['bin/run_workflow.py'],
     author='Invenio Collaboration',
     author_email='info@inveniosoftware.org',
-    url='https://github.com/inveniosoftware/workflow',
+    url=URL,
     keywords=['workflows', 'finite state machine', 'task execution'],
     zip_safe=False,
     include_package_data=True,
@@ -77,6 +72,9 @@ setup(
     install_requires=install_requires,
     setup_requires=setup_requires,
     tests_require=tests_require,
+    autosemver={
+        'bugtracker_url': URL + '/issues',
+    },
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',

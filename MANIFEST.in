@@ -13,3 +13,5 @@ include *.rst
 include tests/*.ini tests/*.py
 include .coveragerc .travis.yml pytest.ini
 include *.py *.sh
+include AUTHORS
+include CHANGELOG
