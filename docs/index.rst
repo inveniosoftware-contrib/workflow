@@ -93,8 +93,8 @@ Basic use is comprised of the following steps:
 
     my_engine.process([my_object0, my_object1])
     # The engine prints: "1\n2"
-    my_object0 == 1
-    my_object1 == 2
+    my_object0.data == 1
+    my_object1.data == 2
 
 5. **Bonus**! Once the engine has ran, it can be reused.
 
@@ -102,8 +102,8 @@ Basic use is comprised of the following steps:
 
     my_engine.process([my_object0, my_object1])
     # The engine prints: "2\n3"
-    my_object0 == 2
-    my_object1 == 3
+    my_object0.data == 2
+    my_object1.data == 3
 
 
 Loops and interrupts
