@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Workflow.
-# Copyright (C) 2011, 2014, 2015, 2016 CERN.
+# Copyright (C) 2011, 2014, 2015, 2016, 2018 CERN.
 #
 # Workflow is free software; you can redistribute it and/or modify it
 # under the terms of the Revised BSD License; see LICENSE file for
@@ -52,7 +52,7 @@ setup_requires = [
 if platform.python_version_tuple() < ('3', '4'):
     install_requires.append('enum34>=1.0.4')
 
-packages = find_packages()
+packages = find_packages(exclude=['docs', 'tests'])
 
 URL = 'https://github.com/inveniosoftware/workflow'
 
