@@ -242,6 +242,7 @@ def CMP(a, b, op):
             ">=": lambda a_, b_: a_ >= b_,
             "<": lambda a_, b_: a_ < b_,
             "<=": lambda a_, b_: a_ <= b_,
+            "in": lambda a_, b_: b_ in a_,
         }[op](a_, b_)
     _CMP.hide = True
     return _CMP
